@@ -1,21 +1,25 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from '../i18n/useTranslation'
+import { supportedLangs, langOptions } from '../i18n/translations'
 import './HomePage.css'
 
 const STEP_UPLOAD = 1
 const STEP_SETTINGS = 2
 const STEP_RESULT = 3
 
-const COLOR_OPTIONS = [
-  { value: 'no-change', label: 'No change' },
-  { value: 'gray', label: 'Gray' },
-]
-
 function HomePage() {
+  const { lang = 'en' } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
   const pathname = location.pathname
-  const isCompressPage = pathname === '/en/compress'
+  const t = useTranslation(lang)
+  const isCompressPage = pathname === `/${lang}/compress`
+
+  const COLOR_OPTIONS = [
+    { value: 'no-change', label: t('colorNoChange') },
+    { value: 'gray', label: t('colorGray') },
+  ]
 
   const [step, setStep] = useState(STEP_UPLOAD)
   const [files, setFiles] = useState([])
@@ -31,14 +35,32 @@ function HomePage() {
   const [compressedBlob, setCompressedBlob] = useState(null)
   const [resultStats, setResultStats] = useState(null)
   const [resultFileName, setResultFileName] = useState('')
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false)
   const fileInputRef = useRef(null)
+  const langDropdownRef = useRef(null)
 
-  // Sync URL with state: on /en/compress with no files -> go to upload
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(e.target)) {
+        setLangDropdownOpen(false)
+      }
+    }
+    if (langDropdownOpen) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [langDropdownOpen])
+
+  // Sync URL with state: on /:lang/compress with no files -> go to upload
   useEffect(() => {
     if (isCompressPage && files.length === 0) {
-      navigate('/en', { replace: true })
+      navigate(`/${lang}`, { replace: true })
     }
-  }, [isCompressPage, files.length, navigate])
+  }, [isCompressPage, files.length, navigate, lang])
 
   const handleFileSelect = useCallback((e) => {
     const selected = Array.from(e.target.files || []).filter((f) => f.type === 'application/pdf')
@@ -46,10 +68,10 @@ function HomePage() {
       setFiles((prev) => [...prev, ...selected])
       setError(null)
       setStep(STEP_SETTINGS)
-      navigate('/en/compress', { replace: true })
+      navigate(`/${lang}/compress`, { replace: true })
     }
     e.target.value = ''
-  }, [navigate])
+  }, [navigate, lang])
 
   const handleDrop = useCallback((e) => {
     e.preventDefault()
@@ -59,9 +81,9 @@ function HomePage() {
       setFiles((prev) => [...prev, ...dropped])
       setError(null)
       setStep(STEP_SETTINGS)
-      navigate('/en/compress', { replace: true })
+      navigate(`/${lang}/compress`, { replace: true })
     }
-  }, [navigate])
+  }, [navigate, lang])
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault()
@@ -78,7 +100,7 @@ function HomePage() {
     setFiles(next)
     if (!next.length) {
       setStep(STEP_UPLOAD)
-      navigate('/en', { replace: true })
+      navigate(`/${lang}`, { replace: true })
     }
   }
 
@@ -150,7 +172,7 @@ function HomePage() {
     setCompressedBlob(null)
     setResultStats(null)
     setIsCompressing(true)
-    setProgress({ message: 'Initializing…' })
+    setProgress({ message: t('progressInitializing') })
 
     let blobUrl = null
     try {
@@ -203,7 +225,7 @@ function HomePage() {
       let outputBuffer = doc.output('arraybuffer')
 
       if (settings.color === 'gray') {
-        setProgress({ message: 'Applying grayscale…' })
+        setProgress({ message: t('progressGrayscale') })
         outputBuffer = await applyGrayscaleToPdf(outputBuffer)
       }
 
@@ -268,36 +290,67 @@ function HomePage() {
     setFiles([])
     setStep(STEP_UPLOAD)
     setError(null)
-    navigate('/en', { replace: true })
+    navigate(`/${lang}`, { replace: true })
   }
+
+  const isCompressActive = pathname === `/${lang}` || pathname === `/${lang}/compress`
 
   return (
     <div className="home-page">
       <header className="header">
         <div className="header-inner">
-          <a href="/en" className="logo" aria-label="Home">
+          <a href={`/${lang}`} className="logo" aria-label={t('nav.home')}>
             I <span className="logo-heart">❤</span> PDF
           </a>
           <nav className="nav" aria-label="Main navigation">
-            <a href="/en/merge">MERGE PDF</a>
-            <a href="/en/split">SPLIT PDF</a>
-            <a href="/en" className={pathname.startsWith('/en') && (pathname === '/en' || pathname === '/en/compress') ? 'nav-active' : ''}>COMPRESS PDF</a>
-            <a href="/en/convert">CONVERT PDF</a>
-            <a href="/en/tools">ALL PDF TOOLS</a>
+            <a href={`/${lang}/merge`}>{t('nav.merge')}</a>
+            <a href={`/${lang}/split`}>{t('nav.split')}</a>
+            <a href={`/${lang}`} className={isCompressActive ? 'nav-active' : ''}>{t('nav.compress')}</a>
+            <a href={`/${lang}/convert`}>{t('nav.convert')}</a>
+            <a href={`/${lang}/tools`}>{t('nav.allTools')}</a>
           </nav>
           <div className="header-actions">
-            <a href="/en/login">Login</a>
+            <div className="lang-dropdown" ref={langDropdownRef}>
+              <button
+                type="button"
+                className="lang-dropdown-trigger"
+                onClick={() => setLangDropdownOpen((open) => !open)}
+                aria-expanded={langDropdownOpen}
+                aria-haspopup="listbox"
+                aria-label="Select language"
+              >
+                <span className="lang-dropdown-flag">{langOptions[lang]?.flag ?? '🌐'}</span>
+                <span className="lang-dropdown-chevron" aria-hidden>▼</span>
+              </button>
+              {langDropdownOpen && (
+                <ul className="lang-dropdown-menu" role="listbox">
+                  {supportedLangs.map((l) => (
+                    <li key={l} role="option" aria-selected={lang === l}>
+                      <a
+                        href={pathname.replace(new RegExp(`^/${lang}(/|$)`), `/${l}$1`)}
+                        className={`lang-dropdown-item ${lang === l ? 'lang-dropdown-item--active' : ''}`}
+                        onClick={() => setLangDropdownOpen(false)}
+                      >
+                        <span className="lang-dropdown-item-flag">{langOptions[l]?.flag ?? '🌐'}</span>
+                        <span className="lang-dropdown-item-label">{langOptions[l]?.label ?? l.toUpperCase()}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <a href={`/${lang}/login`}>{t('nav.login')}</a>
             <button type="button" className="btn-signup">
-              Sign up
+              {t('nav.signUp')}
             </button>
           </div>
         </div>
       </header>
 
       <main id="main-content" className="main" tabIndex="-1">
-        <h1 className="main-title">Compress PDF files</h1>
+        <h1 className="main-title">{t('title')}</h1>
         <p className="main-subtitle">
-          Reduce file size while optimizing for maximal PDF quality.
+          {t('subtitle')}
         </p>
 
         <input
@@ -308,10 +361,10 @@ function HomePage() {
           multiple
           onChange={handleFileSelect}
           className="sr-only"
-          aria-label="Select PDF files"
+          aria-label={t('ariaSelectPdf')}
         />
 
-        {/* Step 1: Upload (only on /en) */}
+        {/* Step 1: Upload */}
         {!isCompressPage && (
           <div
             className={`upload-zone ${isDragging ? 'upload-zone--dragging' : ''}`}
@@ -324,18 +377,18 @@ function HomePage() {
                 type="button"
                 className="btn-select-pdf"
                 onClick={triggerFileInput}
-                aria-label="Select PDF files"
+                aria-label={t('ariaSelectPdf')}
               >
-                Select PDF files
+                {t('selectPdf')}
               </button>
               <div className="upload-icons">
-                <button type="button" className="icon-btn" aria-label="Upload from cloud" title="From cloud">
+                <button type="button" className="icon-btn" aria-label={t('fromCloud')} title={t('fromCloud')}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
                     <path d="M12 16v-8M9 11l3-3 3 3" />
                   </svg>
                 </button>
-                <button type="button" className="icon-btn" aria-label="Other sources" title="Other sources">
+                <button type="button" className="icon-btn" aria-label={t('otherSources')} title={t('otherSources')}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <rect x="3" y="3" width="7" height="7" rx="1" />
                     <rect x="14" y="3" width="7" height="7" rx="1" />
@@ -345,18 +398,18 @@ function HomePage() {
                 </button>
               </div>
             </div>
-            <p className="upload-hint">or drop PDFs here</p>
+            <p className="upload-hint">{t('orDrop')}</p>
           </div>
         )}
 
-        {/* Step 2: Settings + file list (only on /en/compress) */}
+        {/* Step 2: Settings + file list */}
         {isCompressPage && step === STEP_SETTINGS && (
-          <section className="step-settings" aria-label="Compression settings">
+          <section className="step-settings" aria-label={t('compressionSettings')}>
             <div className="file-display-zone">
               <div className="file-display-header">
-                <span className="file-badge">✓ File protection is active</span>
+                <span className="file-badge">{t('fileProtection')}</span>
                 <button type="button" className="link-add-more" onClick={addMoreFiles}>
-                  Add more files
+                  {t('addMoreFiles')}
                 </button>
               </div>
               <ul className="file-cards">
@@ -370,7 +423,7 @@ function HomePage() {
                       type="button"
                       className="file-card-remove"
                       onClick={() => removeFile(i)}
-                      aria-label={`Remove ${file.name}`}
+                      aria-label={`${t('ariaRemove')} ${file.name}`}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
@@ -382,7 +435,7 @@ function HomePage() {
               </ul>
               <div className="settings-row">
                 <label className="setting-label">
-                  <span>DPI</span>
+                  <span>{t('dpi')}</span>
                   <input
                     type="number"
                     min="72"
@@ -393,7 +446,7 @@ function HomePage() {
                   />
                 </label>
                 <label className="setting-label">
-                  <span>Image quality</span>
+                  <span>{t('imageQuality')}</span>
                   <input
                     type="number"
                     min="1"
@@ -405,12 +458,12 @@ function HomePage() {
                   <span className="setting-suffix">%</span>
                 </label>
                 <label className="setting-label">
-                  <span>Color</span>
+                  <span>{t('color')}</span>
                   <select
                     value={settings.color}
                     onChange={(e) => setSettings((s) => ({ ...s, color: e.target.value }))}
                     className="setting-select"
-                    aria-label="Color mode"
+                    aria-label={t('ariaColorMode')}
                   >
                     {COLOR_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -424,7 +477,7 @@ function HomePage() {
                 onClick={runCompress}
                 disabled={isCompressing}
               >
-                {isCompressing ? 'Compressing…' : 'Compress'}
+                {isCompressing ? t('compressing') : t('compress')}
               </button>
             </div>
             {isCompressing && progress.message && (
@@ -433,16 +486,16 @@ function HomePage() {
           </section>
         )}
 
-        {/* Step 3: Result + actions (only on /en/compress) */}
+        {/* Step 3: Result + actions */}
         {isCompressPage && step === STEP_RESULT && compressedBlob && resultStats && (
-          <section className="step-result" aria-label="Compression result">
+          <section className="step-result" aria-label={t('compressionResult')}>
             <div className="result-banner">
               <span className="result-settings">
-                DPI: {settings.dpi}, Image quality: {settings.imageQuality}%, Color: {settings.color === 'gray' ? 'Gray' : 'No change'}
+                {t('dpi')}: {settings.dpi}, {t('imageQuality')}: {settings.imageQuality}%, {t('color')}: {settings.color === 'gray' ? t('colorGray') : t('colorNoChange')}
               </span>
             </div>
             <p className="result-title">
-              The size has been reduced by <strong>{resultStats.percentageSaved?.toFixed(2) ?? 0}%</strong>.
+              {t('resultReduced')} <strong>{resultStats.percentageSaved?.toFixed(2) ?? 0}%</strong>.
             </p>
             <p className="result-filename">
               {resultFileName} – {(compressedBlob.size / 1024).toFixed(2)} KB
@@ -452,46 +505,46 @@ function HomePage() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                 </svg>
-                Download
+                {t('download')}
               </button>
               <button type="button" className="btn-action btn-preview" onClick={handlePreview}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                   <circle cx="12" cy="12" r="3" />
                 </svg>
-                Preview
+                {t('preview')}
               </button>
               <button type="button" className="btn-action btn-erase" onClick={handleErase}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
                 </svg>
-                Erase
+                {t('erase')}
               </button>
               <button type="button" className="btn-action btn-restart" onClick={handleRestart}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M1 4v6h6M23 20v-6h-6" />
                   <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
                 </svg>
-                Restart
+                {t('restart')}
               </button>
             </div>
             <div className="result-share">
-              <span className="result-share-label">Share or continue</span>
+              <span className="result-share-label">{t('shareOrContinue')}</span>
               <div className="result-share-btns">
-                <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer" className="share-btn" aria-label="Google Drive">
+                <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer" className="share-btn" aria-label={t('googleDrive')}>
                   <span className="share-icon gdrive" aria-hidden="true">G</span>
-                  <span>Google Drive</span>
+                  <span>{t('googleDrive')}</span>
                 </a>
-                <a href="https://dropbox.com" target="_blank" rel="noopener noreferrer" className="share-btn" aria-label="Dropbox">
+                <a href="https://dropbox.com" target="_blank" rel="noopener noreferrer" className="share-btn" aria-label={t('dropbox')}>
                   <span className="share-icon dropbox" aria-hidden="true">D</span>
-                  <span>Dropbox</span>
+                  <span>{t('dropbox')}</span>
                 </a>
-                <a href="#" className="share-btn" aria-label="Email" onClick={(e) => { e.preventDefault(); window.location.href = `mailto:?subject=Compressed PDF&body=Download: ${resultFileName}`; }}>
+                <a href="#" className="share-btn" aria-label={t('email')} onClick={(e) => { e.preventDefault(); window.location.href = `mailto:?subject=${encodeURIComponent(t('mailSubject'))}&body=${encodeURIComponent(t('mailBody') + ' ' + resultFileName)}`; }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
-                  <span>Email</span>
+                  <span>{t('email')}</span>
                 </a>
               </div>
             </div>
@@ -506,7 +559,7 @@ function HomePage() {
       </main>
 
       <footer className="footer">
-        <p>© 2026 – Your PDF Editor</p>
+        <p>{t('footer')}</p>
       </footer>
     </div>
   )
