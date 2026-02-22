@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import HomePage from './pages/HomePage'
+import AllToolsPage from './pages/AllToolsPage'
+import ComingSoonPage from './pages/ComingSoonPage'
 import { supportedLangs, defaultLang, getPreferredLang } from './i18n/translations'
 
 function LangGuard({ children }) {
@@ -20,7 +22,15 @@ function App() {
     <Routes>
       <Route path="/" element={<PreferredLangRedirect />} />
       <Route
-        path="/:lang"
+        path="/:lang/tools"
+        element={
+          <LangGuard>
+            <AllToolsPage />
+          </LangGuard>
+        }
+      />
+      <Route
+        path="/:lang/compress"
         element={
           <LangGuard>
             <HomePage />
@@ -28,7 +38,15 @@ function App() {
         }
       />
       <Route
-        path="/:lang/compress"
+        path="/:lang/:tool"
+        element={
+          <LangGuard>
+            <ComingSoonPage />
+          </LangGuard>
+        }
+      />
+      <Route
+        path="/:lang"
         element={
           <LangGuard>
             <HomePage />

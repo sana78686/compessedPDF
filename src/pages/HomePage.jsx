@@ -556,6 +556,28 @@ function HomePage() {
             {error}
           </div>
         )}
+
+        <section className="other-tools" aria-label={t('otherTools')}>
+          <h2 className="other-tools-title">{t('otherTools')}</h2>
+          <div className="other-tools-grid">
+            <a href={`/${lang}/merge`} className="other-tools-card">
+              <span className="other-tools-icon">📄</span>
+              <span>{t('nav.merge')}</span>
+            </a>
+            <a href={`/${lang}/split`} className="other-tools-card">
+              <span className="other-tools-icon">✂️</span>
+              <span>{t('nav.split')}</span>
+            </a>
+            <a href={`/${lang}/convert`} className="other-tools-card">
+              <span className="other-tools-icon">🔄</span>
+              <span>{t('nav.convert')}</span>
+            </a>
+            <a href={`/${lang}/tools`} className="other-tools-card other-tools-card--all">
+              <span className="other-tools-icon">📋</span>
+              <span>{t('nav.allTools')}</span>
+            </a>
+          </div>
+        </section>
       </main>
 
       <footer className="footer">
