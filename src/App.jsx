@@ -30,6 +30,14 @@ function App() {
         }
       />
       <Route
+        path="/:lang/compress/result"
+        element={
+          <LangGuard>
+            <HomePage />
+          </LangGuard>
+        }
+      />
+      <Route
         path="/:lang/compress"
         element={
           <LangGuard>

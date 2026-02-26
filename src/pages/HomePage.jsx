@@ -14,14 +14,16 @@ function HomePage() {
   const navigate = useNavigate()
   const pathname = location.pathname
   const t = useTranslation(lang)
-  const isCompressPage = pathname === `/${lang}/compress`
+  const isResultPath = pathname === `/${lang}/compress/result`
+  const isCompressPath = pathname === `/${lang}/compress`
+  const isCompressPage = isCompressPath || isResultPath
+  const step = isResultPath ? STEP_RESULT : isCompressPath ? STEP_SETTINGS : STEP_UPLOAD
 
   const COLOR_OPTIONS = [
     { value: 'no-change', label: t('colorNoChange') },
     { value: 'gray', label: t('colorGray') },
   ]
 
-  const [step, setStep] = useState(STEP_UPLOAD)
   const [files, setFiles] = useState([])
   const [isDragging, setIsDragging] = useState(false)
   const [settings, setSettings] = useState({
@@ -55,19 +57,25 @@ function HomePage() {
     }
   }, [langDropdownOpen])
 
-  // Sync URL with state: on /:lang/compress with no files -> go to upload
+  // Sync URL with state: on /compress/result with no result data -> back to settings
   useEffect(() => {
-    if (isCompressPage && files.length === 0) {
+    if (isResultPath && !compressedBlob) {
+      navigate(`/${lang}/compress`, { replace: true })
+    }
+  }, [isResultPath, compressedBlob, navigate, lang])
+
+  // Sync URL with state: on /compress with no files -> go to upload
+  useEffect(() => {
+    if (isCompressPath && files.length === 0) {
       navigate(`/${lang}`, { replace: true })
     }
-  }, [isCompressPage, files.length, navigate, lang])
+  }, [isCompressPath, files.length, navigate, lang])
 
   const handleFileSelect = useCallback((e) => {
     const selected = Array.from(e.target.files || []).filter((f) => f.type === 'application/pdf')
     if (selected.length) {
       setFiles((prev) => [...prev, ...selected])
       setError(null)
-      setStep(STEP_SETTINGS)
       navigate(`/${lang}/compress`, { replace: true })
     }
     e.target.value = ''
@@ -80,7 +88,6 @@ function HomePage() {
     if (dropped.length) {
       setFiles((prev) => [...prev, ...dropped])
       setError(null)
-      setStep(STEP_SETTINGS)
       navigate(`/${lang}/compress`, { replace: true })
     }
   }, [navigate, lang])
@@ -99,7 +106,6 @@ function HomePage() {
     const next = files.filter((_, i) => i !== index)
     setFiles(next)
     if (!next.length) {
-      setStep(STEP_UPLOAD)
       navigate(`/${lang}`, { replace: true })
     }
   }
@@ -242,7 +248,7 @@ function HomePage() {
         percentageSaved,
       })
       setResultFileName(String(file.name || 'document').replace(/\.pdf$/i, '') + '-compressed.pdf')
-      setStep(STEP_RESULT)
+      navigate(`/${lang}/compress/result`, { replace: true })
     } catch (err) {
       const msg = err?.message != null ? String(err.message) : ''
       const cause = err?.underlyingError?.message ?? err?.cause?.message
@@ -279,7 +285,7 @@ function HomePage() {
     setCompressedBlob(null)
     setResultStats(null)
     setResultFileName('')
-    setStep(STEP_SETTINGS)
+    navigate(`/${lang}/compress`, { replace: true })
   }
 
   const handleRestart = () => {
@@ -288,19 +294,18 @@ function HomePage() {
     setResultStats(null)
     setResultFileName('')
     setFiles([])
-    setStep(STEP_UPLOAD)
     setError(null)
     navigate(`/${lang}`, { replace: true })
   }
 
-  const isCompressActive = pathname === `/${lang}` || pathname === `/${lang}/compress`
+  const isCompressActive = pathname === `/${lang}` || pathname === `/${lang}/compress` || pathname === `/${lang}/compress/result`
 
   return (
     <div className="home-page">
       <header className="header">
         <div className="header-inner">
           <a href={`/${lang}`} className="logo" aria-label={t('nav.home')}>
-            I <span className="logo-heart">❤</span> PDF
+            compressedPDF
           </a>
           <nav className="nav" aria-label="Main navigation">
             <a href={`/${lang}/merge`}>{t('nav.merge')}</a>
@@ -320,6 +325,7 @@ function HomePage() {
                 aria-label="Select language"
               >
                 <span className="lang-dropdown-flag">{langOptions[lang]?.flag ?? '🌐'}</span>
+                <span className="lang-dropdown-label">{langOptions[lang]?.label ?? lang.toUpperCase()}</span>
                 <span className="lang-dropdown-chevron" aria-hidden>▼</span>
               </button>
               {langDropdownOpen && (
@@ -340,9 +346,19 @@ function HomePage() {
               )}
             </div>
             <a href={`/${lang}/login`}>{t('nav.login')}</a>
-            <button type="button" className="btn-signup">
-              {t('nav.signUp')}
-            </button>
+            <a href={`/${lang}/tools`} className="icon-more-tools" aria-label={t('nav.allTools')} title={t('nav.allTools')}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <rect x="3" y="3" width="5" height="5" rx="0.5" />
+                <rect x="10" y="3" width="5" height="5" rx="0.5" />
+                <rect x="17" y="3" width="5" height="5" rx="0.5" />
+                <rect x="3" y="10" width="5" height="5" rx="0.5" />
+                <rect x="10" y="10" width="5" height="5" rx="0.5" />
+                <rect x="17" y="10" width="5" height="5" rx="0.5" />
+                <rect x="3" y="17" width="5" height="5" rx="0.5" />
+                <rect x="10" y="17" width="5" height="5" rx="0.5" />
+                <rect x="17" y="17" width="5" height="5" rx="0.5" />
+              </svg>
+            </a>
           </div>
         </div>
       </header>

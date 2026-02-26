@@ -66,7 +66,7 @@ function AllToolsPage() {
       <header className="header">
         <div className="header-inner">
           <a href={`/${lang}`} className="logo" aria-label={t('nav.home')}>
-            I <span className="logo-heart">❤</span> PDF
+            compressedPDF
           </a>
           <nav className="nav" aria-label="Main navigation">
             <a href={`/${lang}/merge`}>{t('nav.merge')}</a>
@@ -86,6 +86,7 @@ function AllToolsPage() {
                 aria-label="Select language"
               >
                 <span className="lang-dropdown-flag">{langOptions[lang]?.flag ?? '🌐'}</span>
+                <span className="lang-dropdown-label">{langOptions[lang]?.label ?? lang.toUpperCase()}</span>
                 <span className="lang-dropdown-chevron" aria-hidden>▼</span>
               </button>
               {langDropdownOpen && (
@@ -106,9 +107,6 @@ function AllToolsPage() {
               )}
             </div>
             <a href={`/${lang}/login`}>{t('nav.login')}</a>
-            <button type="button" className="btn-signup">
-              {t('nav.signUp')}
-            </button>
           </div>
         </div>
       </header>
