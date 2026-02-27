@@ -2,6 +2,9 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { supportedLangs, langOptions } from '../i18n/translations'
+import { getPages } from '../api/cms'
+import { CmsPagesSection } from '../components/CmsPagesSection'
+import Footer from '../components/Footer'
 import './HomePage.css'
 
 const STEP_UPLOAD = 1
@@ -38,12 +41,22 @@ function HomePage() {
   const [resultStats, setResultStats] = useState(null)
   const [resultFileName, setResultFileName] = useState('')
   const [langDropdownOpen, setLangDropdownOpen] = useState(false)
+  const [cmsPages, setCmsPages] = useState([])
   const fileInputRef = useRef(null)
   const langDropdownRef = useRef(null)
+
+  const headerPages = cmsPages.filter((p) => p.placement === 'header' || p.placement === 'both')
+  const footerPages = cmsPages.filter((p) => p.placement === 'footer' || p.placement === 'both')
 
   useEffect(() => {
     document.documentElement.lang = lang
   }, [lang])
+
+  useEffect(() => {
+    getPages()
+      .then((res) => setCmsPages(res.pages || []))
+      .catch(() => setCmsPages([]))
+  }, [])
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -312,6 +325,9 @@ function HomePage() {
             <a href={`/${lang}/split`}>{t('nav.split')}</a>
             <a href={`/${lang}`} className={isCompressActive ? 'nav-active' : ''}>{t('nav.compress')}</a>
             <a href={`/${lang}/convert`}>{t('nav.convert')}</a>
+            {headerPages.map((p) => (
+              <a key={p.id} href={`/${lang}/page/${p.slug}`}>{p.title}</a>
+            ))}
             <a href={`/${lang}/tools`}>{t('nav.allTools')}</a>
           </nav>
           <div className="header-actions">
@@ -594,11 +610,11 @@ function HomePage() {
             </a>
           </div>
         </section>
+
+        <CmsPagesSection />
       </main>
 
-      <footer className="footer">
-        <p>{t('footer')}</p>
-      </footer>
+      <Footer lang={lang} pathname={pathname} t={t} footerPages={footerPages} />
     </div>
   )
 }

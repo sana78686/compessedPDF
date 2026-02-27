@@ -2,7 +2,9 @@ import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import HomePage from './pages/HomePage'
 import AllToolsPage from './pages/AllToolsPage'
 import ComingSoonPage from './pages/ComingSoonPage'
-import { supportedLangs, defaultLang, getPreferredLang } from './i18n/translations'
+import CmsPage from './pages/CmsPage'
+import CmsBlog from './pages/CmsBlog'
+import { supportedLangs, getPreferredLang } from './i18n/translations'
 
 function LangGuard({ children }) {
   const { lang } = useParams()
@@ -42,6 +44,22 @@ function App() {
         element={
           <LangGuard>
             <HomePage />
+          </LangGuard>
+        }
+      />
+      <Route
+        path="/:lang/page/:slug"
+        element={
+          <LangGuard>
+            <CmsPage />
+          </LangGuard>
+        }
+      />
+      <Route
+        path="/:lang/blog/:slug"
+        element={
+          <LangGuard>
+            <CmsBlog />
           </LangGuard>
         }
       />

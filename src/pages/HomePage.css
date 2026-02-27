@@ -227,6 +227,12 @@
   text-align: center;
 }
 
+.main.cms-main {
+  text-align: left;
+  max-width: 800px;
+  padding: 2rem 1.5rem 3rem;
+}
+
 .main-title {
   font-size: 2.75rem;
   font-weight: 700;
@@ -425,18 +431,87 @@
   border: 0;
 }
 
-/* Footer */
+/* Footer – matches header, attached to site design */
 .footer {
   border-top: 1px solid var(--border-light);
-  padding: 1rem 1.5rem;
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--text-muted);
+  padding: 1.5rem 1.5rem 1.25rem;
   background: var(--bg-header);
+  margin-top: auto;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+}
+
+.footer-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.footer-logo:hover {
+  color: var(--accent-red);
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+
+.footer-links a {
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: var(--accent-red);
+}
+
+.footer-copy {
+  margin: 1rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .footer p {
   margin: 0;
+}
+
+.footer-nav {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.25rem;
+}
+
+.footer-nav a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.footer-nav a:hover {
+  color: var(--accent-red);
+  text-decoration: underline;
 }
 
 /* Other tools section */
@@ -974,4 +1049,50 @@
   .main-title {
     font-size: 1.5rem;
   }
+}
+
+/* CMS pages section (from backend) */
+.cms-pages-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 1rem;
+  width: 100%;
+}
+
+.cms-pages-section-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.cms-pages-block {
+  min-width: 0;
+}
+
+.cms-pages-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.cms-pages-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cms-pages-list li {
+  margin: 0.25rem 0;
+}
+
+.cms-pages-list a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+
+.cms-pages-list a:hover {
+  color: var(--accent-red);
+  text-decoration: underline;
 }

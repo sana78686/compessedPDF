@@ -1,0 +1,109 @@
+/* CMS page content – compressed PDF theme */
+.cms-page.wrap {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.cms-page-loading,
+.cms-page-error {
+  color: var(--text-muted);
+  margin: 2rem 0;
+}
+
+.cms-page-error {
+  color: var(--accent-red);
+}
+
+.cms-page-header {
+  margin-bottom: 1.5rem;
+}
+
+.cms-page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.cms-page-content {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  background: var(--bg-header);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 1.75rem 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.cms-page-content h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 1.5rem 0 0.75rem;
+  color: var(--text-primary);
+}
+
+.cms-page-content h1:first-child {
+  margin-top: 0;
+}
+
+.cms-page-content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+  color: var(--text-primary);
+}
+
+.cms-page-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+  color: var(--text-primary);
+}
+
+.cms-page-content p {
+  margin: 0 0 1rem;
+}
+
+.cms-page-content ul,
+.cms-page-content ol {
+  margin: 0 0 1rem;
+  padding-left: 1.5rem;
+}
+
+.cms-page-content a {
+  color: var(--accent-red);
+  text-decoration: none;
+}
+
+.cms-page-content a:hover {
+  text-decoration: underline;
+  color: var(--accent-red-hover, #c93535);
+}
+
+.cms-page-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.cms-page-back {
+  color: var(--accent-red);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.cms-page-back:hover {
+  text-decoration: underline;
+  color: var(--accent-red-hover, #c93535);
+}
+
+.cms-page-date {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
