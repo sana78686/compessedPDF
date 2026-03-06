@@ -1,5 +1,5 @@
 const FALLBACK_API_BASE = import.meta.env.PROD
-  ? 'https://portal.compressedpdf.apimstec.com'
+  ? 'https://portal.compresspdf.id'
   : 'http://localhost:8000'
 
 const API_BASE = (import.meta.env.VITE_API_URL || FALLBACK_API_BASE).replace(/\/$/, '')

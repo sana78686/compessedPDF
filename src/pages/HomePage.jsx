@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { SeoHead } from '../components/SeoHead'
 import './HomePage.css'
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
 const LandingBelowFold = lazy(() => import('./LandingBelowFold'))
 
@@ -127,7 +128,7 @@ function HomePage() {
       import('jspdf'),
     ])
     if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `${window.location.origin}/pdf.js/pdf.worker.min.mjs`
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
     }
     const blob = new Blob([arrayBuffer], { type: 'application/pdf' })
     const url = URL.createObjectURL(blob)
@@ -194,7 +195,7 @@ function HomePage() {
         import('jspdf'),
       ])
       if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `${window.location.origin}/pdf.js/pdf.worker.min.mjs`
+        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
       }
 
       blobUrl = URL.createObjectURL(file)

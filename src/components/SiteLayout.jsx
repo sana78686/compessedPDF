@@ -13,7 +13,7 @@ const Footer = lazy(() => import('./Footer'))
 const MegaMenu = lazy(() => import('./MegaMenu'))
 const ConvertMegaMenu = lazy(() => import('./ConvertMegaMenu'))
 
-// Cookie name the portal can set on login (e.g. on .apimstec.com) to show Dashboard instead of Login
+// Cookie name the portal can set on login (e.g. on .compresspdf.id) to show Dashboard instead of Login
 const PORTAL_SESSION_COOKIE = 'compressedpdf_portal_session'
 
 export default function SiteLayout({ children }) {

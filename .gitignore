@@ -12,6 +12,7 @@ compressedPDF-cms
 dist
 dist-ssr
 *.local
+compresspdf.id-build
 
 # Windows reserved device name (avoids "unable to index file nul" on git add)
 nul

@@ -17,7 +17,7 @@ If you are developing a production application, we recommend using TypeScript wi
 
 ## Deploying to Apache (live server)
 
-1. Build: `npm run build`. Deploy the **entire** contents of the `dist/` folder to your document root (e.g. `pdf.apimstec.com`). The build copies `public/.htaccess` into `dist/`, which tells Apache to serve `index.html` for routes like `/en`, `/en/tools`, `/id`, etc., so direct links work.
+1. Build: `npm run build`. Deploy the **entire** contents of the `dist/` folder to your document root (e.g. `compresspdf.id`). The build copies `public/.htaccess` into `dist/`, which tells Apache to serve `index.html` for routes like `/en`, `/en/tools`, `/id`, etc., so direct links work.
 
 2. **If direct links still show a blank page or 500 error**, Apache is not applying `.htaccess`. Add this to your Apache vhost config for this site (so it applies even when `.htaccess` is disabled):
 
