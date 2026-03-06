@@ -51,6 +51,12 @@ export default function SiteLayout({ children }) {
   }, [])
 
   useEffect(() => {
+    if (typeof document !== 'undefined' && lang) {
+      document.documentElement.lang = lang
+    }
+  }, [lang])
+
+  useEffect(() => {
     const id = requestIdleCallback
       ? requestIdleCallback(() => {
           getPages()
@@ -100,7 +106,7 @@ export default function SiteLayout({ children }) {
       <header className="header">
         <div className="header-inner">
           <a href={`/${lang}`} className="logo" aria-label={t('nav.home')}>
-            compressedPDF
+            <img src="/logos/compresspdf.png" alt="compressedPDF" decoding="async" />
           </a>
           <nav className="nav" aria-label="Main navigation">
             <a href={`/${lang}/merge`}>{ucWords(t('nav.merge'))}</a>

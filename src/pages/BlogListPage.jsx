@@ -73,7 +73,7 @@ export default function BlogListPage() {
                 {(post.og_image || post.image) ? (
                   <img
                     src={post.og_image || post.image}
-                    alt=""
+                    alt={post.title ? `Cover image for ${post.title}` : 'Blog post'}
                     className="blog-card-image"
                     loading="lazy"
                     decoding="async"

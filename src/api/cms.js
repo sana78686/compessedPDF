@@ -81,3 +81,27 @@ export function submitContactForm(data) {
     body: JSON.stringify(data),
   })
 }
+
+/** @returns {Promise<{ faq: Array<{ id: number, question: string, answer: string, sort_order: number }> }>} */
+export function getFaq() {
+  return request('/faq')
+}
+
+/** @returns {Promise<{ cards: Array<{ id: number, title: string, description: string, icon: string|null, sort_order: number }> }>} */
+export function getHomeCards() {
+  return request('/home-cards')
+}
+
+/** @returns {Promise<{ content: string }>} Home page rich text (HTML) shown above FAQ */
+export function getHomePageContent() {
+  return request('/home-content')
+}
+
+/**
+ * Legal/content page by slug: terms, privacy-policy, disclaimer, about-us, cookie-policy.
+ * @param {string} slug
+ * @returns {Promise<{ slug: string, title: string, content: string }>}
+ */
+export function getLegalPage(slug) {
+  return request(`/legal/${encodeURIComponent(slug)}`)
+}

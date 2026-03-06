@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, lazy, Suspense, startTransiti
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { SeoHead } from '../components/SeoHead'
+import { getFaq, getHomeCards, getHomePageContent } from '../api/cms'
 import './HomePage.css'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
@@ -60,10 +61,51 @@ function HomePage() {
   const fileInputRef = useRef(null)
   const [faqOpenIndex, setFaqOpenIndex] = useState(null)
   const [showBelowFold, setShowBelowFold] = useState(false)
+  const [landingFaq, setLandingFaq] = useState([])
+  const [landingCards, setLandingCards] = useState([])
+  const [landingHomeContent, setLandingHomeContent] = useState('')
+  const [homeMeta, setHomeMeta] = useState(null)
 
   useEffect(() => {
     document.documentElement.lang = lang
   }, [lang])
+
+  /* Fetch home content + meta when on exact home route (for meta tags and below-fold content) */
+  const isHomeLanding = pathname === `/${lang}` || pathname === `/${lang}/`
+  useEffect(() => {
+    if (!isHomeLanding) return
+    let cancelled = false
+    getHomePageContent()
+      .then((res) => {
+        if (cancelled) return
+        setLandingHomeContent(typeof res.content === 'string' ? res.content : '')
+        setHomeMeta({
+          meta_title: res.meta_title ?? '',
+          meta_description: res.meta_description ?? '',
+          og_title: res.og_title ?? '',
+          og_description: res.og_description ?? '',
+          og_image: res.og_image ?? '',
+        })
+      })
+      .catch(() => { if (!cancelled) setHomeMeta({}); })
+    return () => { cancelled = true }
+  }, [isHomeLanding, lang])
+
+  /* Fetch FAQ and cards when below-the-fold is shown */
+  useEffect(() => {
+    if (!showBelowFold) return
+    let cancelled = false
+    Promise.all([
+      getFaq().catch(() => ({ faq: [] })),
+      getHomeCards().catch(() => ({ cards: [] })),
+    ])
+      .then(([faqRes, cardsRes]) => {
+        if (cancelled) return
+        setLandingFaq(Array.isArray(faqRes.faq) ? faqRes.faq : [])
+        setLandingCards(Array.isArray(cardsRes.cards) ? cardsRes.cards : [])
+      })
+    return () => { cancelled = true }
+  }, [showBelowFold])
 
   /* Defer below-the-fold content to reduce TBT on mobile (Lighthouse Performance) */
   useEffect(() => {
@@ -317,18 +359,26 @@ function HomePage() {
     navigate(`/${lang}`, { replace: true })
   }
 
-  const faqItems = [
-    { q: t('landing.faq1Q'), a: t('landing.faq1A') },
-    { q: t('landing.faq2Q'), a: t('landing.faq2A') },
-    { q: t('landing.faq3Q'), a: t('landing.faq3A') },
-    { q: t('landing.faq4Q'), a: t('landing.faq4A') },
-  ]
+  /* CMS FAQ: show section only when at least one item exists */
+  const faqItems = landingFaq.length > 0
+    ? landingFaq.map((item) => ({ q: item.question, a: item.answer }))
+    : []
+
+  /* Home landing only: use CMS meta when available; otherwise defaults */
+  const seoTitle = isHomeLanding && homeMeta?.meta_title ? homeMeta.meta_title : t('title')
+  const seoDescription = isHomeLanding && homeMeta?.meta_description ? homeMeta.meta_description : t('subtitle')
+  const seoOgTitle = isHomeLanding && homeMeta?.og_title ? homeMeta.og_title : undefined
+  const seoOgDescription = isHomeLanding && homeMeta?.og_description ? homeMeta.og_description : undefined
+  const seoOgImage = isHomeLanding && homeMeta?.og_image ? homeMeta.og_image : undefined
 
   return (
     <div className="home-page">
       <SeoHead
-        title={t('title')}
-        description={t('subtitle')}
+        title={seoTitle}
+        description={seoDescription}
+        ogTitle={seoOgTitle}
+        ogDescription={seoOgDescription}
+        ogImage={seoOgImage}
       />
       <main id="main-content" className={`main ${!isCompressPage ? 'main--landing' : ''}`} tabIndex="-1">
         {isCompressPage && (
@@ -393,9 +443,11 @@ function HomePage() {
               <Suspense fallback={null}>
                 <LandingBelowFold
                   t={t}
+                  homeContent={landingHomeContent}
                   faqItems={faqItems}
                   faqOpenIndex={faqOpenIndex}
                   setFaqOpenIndex={setFaqOpenIndex}
+                  cards={landingCards}
                 />
               </Suspense>
             )}

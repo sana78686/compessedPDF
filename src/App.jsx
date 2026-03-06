@@ -11,6 +11,7 @@ const CmsPage = lazy(() => import('./pages/CmsPage'))
 const CmsBlog = lazy(() => import('./pages/CmsBlog'))
 const BlogListPage = lazy(() => import('./pages/BlogListPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
+const LegalContentPage = lazy(() => import('./pages/LegalContentPage'))
 
 function LangGuard({ children }) {
   const { lang } = useParams()
@@ -55,6 +56,7 @@ function App() {
         <Route path="/:lang/blog/:slug" element={<CmsBlog />} />
         <Route path="/:lang/blog" element={<BlogListPage />} />
         <Route path="/:lang/contact" element={<ContactPage />} />
+        <Route path="/:lang/legal/:slug" element={<LegalContentPage />} />
         <Route path="/:lang/:tool" element={<ComingSoonPage />} />
         <Route path="/:lang" element={<HomePage />} />
       </Route>

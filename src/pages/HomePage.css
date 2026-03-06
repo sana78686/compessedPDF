@@ -38,6 +38,16 @@
   font-weight: 700;
   color: var(--text-primary);
   text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.logo img {
+  height: 2.75rem;
+  width: auto;
+  max-width: 180px;
+  display: block;
+  object-fit: contain;
 }
 
 .logo:hover {
@@ -358,6 +368,29 @@
   letter-spacing: -0.01em;
   text-align: left;
 }
+
+/* Home page rich text (above FAQ) – CMS editor content */
+.landing-home-content {
+  padding-top: 0;
+  padding-bottom: 1.5rem;
+}
+.landing-home-content-body {
+  max-width: 100%;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+.landing-home-content-body :first-child { margin-top: 0; }
+.landing-home-content-body :last-child { margin-bottom: 0; }
+.landing-home-content-body h1, .landing-home-content-body h2, .landing-home-content-body h3 {
+  margin: 1.25em 0 0.5em;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.landing-home-content-body p { margin: 0.75em 0; }
+.landing-home-content-body a { color: var(--accent-red, #e03d3d); text-decoration: none; }
+.landing-home-content-body a:hover { text-decoration: underline; }
+.landing-home-content-body ul, .landing-home-content-body ol { margin: 0.75em 0; padding-left: 1.5em; }
 
 /* Feature cards grid */
 .landing-features {
@@ -1218,6 +1251,11 @@
     padding: 0.75rem 1rem;
   }
 
+  .logo img {
+    height: 2.5rem;
+    max-width: 160px;
+  }
+
   .nav {
     gap: 1rem;
   }
@@ -1262,6 +1300,11 @@
 
   .logo {
     font-size: 1.35rem;
+  }
+
+  .logo img {
+    height: 2.25rem;
+    max-width: 140px;
   }
 
   .nav {

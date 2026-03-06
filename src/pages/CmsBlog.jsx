@@ -118,7 +118,7 @@ export default function CmsBlog() {
         </dl>
         {heroImage && (
           <div className="cms-blog-hero">
-            <img src={heroImage} alt="" className="cms-blog-hero-img" loading="eager" decoding="async" />
+            <img src={heroImage} alt={data.title ? `Featured image for ${data.title}` : 'Blog featured image'} className="cms-blog-hero-img" loading="eager" decoding="async" />
           </div>
         )}
         {!heroImage && (
