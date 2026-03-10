@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense, startTransition } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
-import { SeoHead } from '../components/SeoHead'
 import { getFaq, getHomeCards, getHomePageContent } from '../api/cms'
 import './HomePage.css'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
@@ -64,7 +63,6 @@ function HomePage() {
   const [landingFaq, setLandingFaq] = useState([])
   const [landingCards, setLandingCards] = useState([])
   const [landingHomeContent, setLandingHomeContent] = useState('')
-  const [homeMeta, setHomeMeta] = useState(null)
 
   useEffect(() => {
     document.documentElement.lang = lang
@@ -79,15 +77,8 @@ function HomePage() {
       .then((res) => {
         if (cancelled) return
         setLandingHomeContent(typeof res.content === 'string' ? res.content : '')
-        setHomeMeta({
-          meta_title: res.meta_title ?? '',
-          meta_description: res.meta_description ?? '',
-          og_title: res.og_title ?? '',
-          og_description: res.og_description ?? '',
-          og_image: res.og_image ?? '',
-        })
       })
-      .catch(() => { if (!cancelled) setHomeMeta({}); })
+      .catch(() => { if (!cancelled) setLandingHomeContent(''); })
     return () => { cancelled = true }
   }, [isHomeLanding, lang])
 
@@ -364,22 +355,8 @@ function HomePage() {
     ? landingFaq.map((item) => ({ q: item.question, a: item.answer }))
     : []
 
-  /* Home landing only: use CMS meta when available; otherwise defaults */
-  const seoTitle = isHomeLanding && homeMeta?.meta_title ? homeMeta.meta_title : t('title')
-  const seoDescription = isHomeLanding && homeMeta?.meta_description ? homeMeta.meta_description : t('subtitle')
-  const seoOgTitle = isHomeLanding && homeMeta?.og_title ? homeMeta.og_title : undefined
-  const seoOgDescription = isHomeLanding && homeMeta?.og_description ? homeMeta.og_description : undefined
-  const seoOgImage = isHomeLanding && homeMeta?.og_image ? homeMeta.og_image : undefined
-
   return (
     <div className="home-page">
-      <SeoHead
-        title={seoTitle}
-        description={seoDescription}
-        ogTitle={seoOgTitle}
-        ogDescription={seoOgDescription}
-        ogImage={seoOgImage}
-      />
       <main id="main-content" className={`main ${!isCompressPage ? 'main--landing' : ''}`} tabIndex="-1">
         {isCompressPage && (
           <>

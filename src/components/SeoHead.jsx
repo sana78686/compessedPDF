@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 const DEFAULT_OG_IMAGE = '/logos/compresspdf.png'
 const SITE_NAME = 'Compress PDF'
 
-const META_NAMES = ['description', 'robots']
+const META_NAMES = ['description', 'keywords', 'robots']
 const META_PROPERTIES = [
   'og:title',
   'og:description',
@@ -34,6 +34,7 @@ const META_PROPERTIES = [
 export function SeoHead({
   title = '',
   description = '',
+  keywords = '',
   canonical = '',
   robots = 'index, follow',
   ogTitle,
@@ -68,6 +69,7 @@ export function SeoHead({
     }
 
     setMeta('description', description)
+    setMeta('keywords', keywords)
     setMeta('robots', robots)
     setMeta('og:title', ogTitleFinal, true)
     setMeta('og:description', ogDescFinal, true)
@@ -111,7 +113,7 @@ export function SeoHead({
       const link = document.querySelector('link[rel="canonical"]')
       if (link?.parentNode) link.parentNode.removeChild(link)
     }
-  }, [siteTitle, description, robots, canonical, ogTitleFinal, ogDescFinal, ogImage, ogType])
+  }, [siteTitle, description, keywords, robots, canonical, ogTitleFinal, ogDescFinal, ogImage, ogType])
 
   return null
 }

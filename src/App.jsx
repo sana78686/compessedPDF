@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useParams, Outlet } from 'react-router-dom'
 import SiteLayout from './components/SiteLayout'
 import HomePage from './pages/HomePage'
+import DynamicSeoHead from './components/DynamicSeoHead'
 import { supportedLangs, getPreferredLang } from './i18n/translations'
 
 /* Route-level code splitting: keep initial bundle small for LCP/TBT (Lighthouse Performance) */
@@ -46,22 +47,25 @@ function SiteLayoutWrapper() {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<PreferredLangRedirect />} />
-      <Route element={<LangGuard><SiteLayoutWrapper /></LangGuard>}>
-        <Route path="/:lang/tools" element={<AllToolsPage />} />
-        <Route path="/:lang/compress/result" element={<HomePage />} />
-        <Route path="/:lang/compress" element={<HomePage />} />
-        <Route path="/:lang/page/:slug" element={<CmsPage />} />
-        <Route path="/:lang/blog/:slug" element={<CmsBlog />} />
-        <Route path="/:lang/blog" element={<BlogListPage />} />
-        <Route path="/:lang/contact" element={<ContactPage />} />
-        <Route path="/:lang/legal/:slug" element={<LegalContentPage />} />
-        <Route path="/:lang/:tool" element={<ComingSoonPage />} />
-        <Route path="/:lang" element={<HomePage />} />
-      </Route>
-      <Route path="*" element={<PreferredLangRedirect />} />
-    </Routes>
+    <>
+      <DynamicSeoHead />
+      <Routes>
+        <Route path="/" element={<PreferredLangRedirect />} />
+        <Route element={<LangGuard><SiteLayoutWrapper /></LangGuard>}>
+          <Route path="/:lang/tools" element={<AllToolsPage />} />
+          <Route path="/:lang/compress/result" element={<HomePage />} />
+          <Route path="/:lang/compress" element={<HomePage />} />
+          <Route path="/:lang/page/:slug" element={<CmsPage />} />
+          <Route path="/:lang/blog/:slug" element={<CmsBlog />} />
+          <Route path="/:lang/blog" element={<BlogListPage />} />
+          <Route path="/:lang/contact" element={<ContactPage />} />
+          <Route path="/:lang/legal/:slug" element={<LegalContentPage />} />
+          <Route path="/:lang/:tool" element={<ComingSoonPage />} />
+          <Route path="/:lang" element={<HomePage />} />
+        </Route>
+        <Route path="*" element={<PreferredLangRedirect />} />
+      </Routes>
+    </>
   )
 }
 

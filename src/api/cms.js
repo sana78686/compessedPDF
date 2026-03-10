@@ -97,6 +97,11 @@ export function getHomePageContent() {
   return request('/home-content')
 }
 
+/** @returns {Promise<{ meta_title: string, meta_description: string, meta_keywords: string, focus_keyword: string, og_title: string, og_description: string, og_image: string }>} Home page SEO meta tags */
+export function getHomeSeo() {
+  return request('/home-content')
+}
+
 /**
  * Legal/content page by slug: terms, privacy-policy, disclaimer, about-us, cookie-policy.
  * @param {string} slug
