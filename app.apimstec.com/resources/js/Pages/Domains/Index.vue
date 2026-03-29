@@ -9,6 +9,7 @@ const props = defineProps({
   flash:          { type: Object, default: () => ({}) },
 });
 
+
 const switching   = ref(null);
 const schemaMenu  = ref(null); // domain id whose schema dropdown is open
 const testResults = ref({});   // { [domainId]: { testing, success, message } }
