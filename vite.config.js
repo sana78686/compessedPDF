@@ -91,6 +91,15 @@ function cmsSeoInjectPlugin(viteEnv) {
           const ogImage   = data.og_image         || DEFAULT_OG_IMAGE
           const robots    = data.meta_robots      || 'index,follow'
           const canonical = data.canonical_url    || ''
+          const headSnippet = String(data.head_snippet || '').trim()
+          const gaIdRaw = String(data.ga_measurement_id || viteEnv.VITE_GA_MEASUREMENT_ID || '').trim()
+          const gaIdOk = /^G-[A-Z0-9]+$/i.test(gaIdRaw)
+          // If the CMS already has a custom head HTML block, use it only (avoids two different GA IDs).
+          const injectGaBuild =
+            !headSnippet && gaIdOk
+              ? `\n    <script async src="https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaIdRaw)}"></script>\n    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaIdRaw.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}');</script>\n`
+              : ''
+          const injectSnippetBuild = headSnippet ? `\n${headSnippet}\n` : ''
 
           // Update <title> and the existing robots meta in-place (avoid duplicates)
           let out = html
@@ -113,8 +122,11 @@ function cmsSeoInjectPlugin(viteEnv) {
             `    <meta name="twitter:image" content="${esc(ogImage)}" />`,
           ].filter(Boolean).join('\n')
 
-          out = out.replace('</head>', `${tags}\n  </head>`)
-          console.log('[cms-seo-inject] Home SEO injected from CMS ✓')
+          out = out.replace(
+            '</head>',
+            `${tags}${injectSnippetBuild}${injectGaBuild}\n  </head>`,
+          )
+          console.log('[cms-seo-inject] Home SEO + head snippet injected from CMS ✓')
           return out
         } catch (e) {
           console.warn(`[cms-seo-inject] Could not fetch CMS SEO — keeping static fallbacks (${e.message})`)
