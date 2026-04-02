@@ -1,12 +1,30 @@
-import { CMS_API_BASE, CMS_SITE_DOMAIN } from '../config/cms.js'
+import { CMS_API_BASE, CMS_SITE_DOMAIN, normalizeSiteDomain } from '../config/cms.js'
+
+/** Current site host for public API path (browser) or env fallback (SSR/build tools). */
+function resolveSiteDomainForApi() {
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const h = normalizeSiteDomain(window.location.hostname)
+    // Dev: Vite is often localhost while CMS domain is compresspdf.id (or set in .env).
+    if (h === 'localhost' || h === '127.0.0.1') {
+      return CMS_SITE_DOMAIN
+    }
+    return h
+  }
+  return CMS_SITE_DOMAIN
+}
+
+/** Path prefix: /compresspdf.id/api/public — tenant is first segment (same CMS for all sites). */
+function publicApiRoot() {
+  const host = resolveSiteDomainForApi()
+  return `/${host}/api/public`
+}
 
 async function request(path, options = {}) {
-  const url = `${CMS_API_BASE}/api/public${path}`
+  const url = `${CMS_API_BASE}${publicApiRoot()}${path}`
   const res = await fetch(url, {
     ...options,
     headers: {
       Accept: 'application/json',
-      'X-Domain': CMS_SITE_DOMAIN,
       ...options.headers,
     },
   })

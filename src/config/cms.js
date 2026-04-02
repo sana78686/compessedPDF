@@ -9,7 +9,7 @@
  * Repo layout: `src/` = this React app; `app.apimstec.com/` = Laravel CMS + admin UI.
  */
 
-function normalizeSiteDomain(value) {
+export function normalizeSiteDomain(value) {
   return String(value ?? '')
     .trim()
     .toLowerCase()
@@ -28,8 +28,9 @@ export const CMS_API_BASE = String(
 ).replace(/\/$/, '')
 
 /**
- * Host that must match CMS → Domains → `domain` for this site.
- * Sent as `X-Domain` on every `/api/public/*` request so the API uses the right tenant DB.
+ * Fallback site host when `window` is unavailable (e.g. Vite SEO inject at build).
+ * In the browser, API URLs use `window.location.hostname` so one build serves every domain.
+ * Must match CMS → Domains → `domain` for the tenant DB.
  */
 export const CMS_SITE_DOMAIN = normalizeSiteDomain(
   import.meta.env.VITE_SITE_DOMAIN || 'compresspdf.id',
