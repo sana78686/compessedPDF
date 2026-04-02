@@ -23,24 +23,14 @@ const CARD_ICON_EMOJI = {
 }
 
 /**
- * Below-the-fold landing content (home rich text, FAQ, features, how it works).
- * Home content from CMS is shown above FAQ when present. FAQ and Cards render only when CMS has data.
+ * Below-the-fold landing content (FAQ, CMS feature cards, how it works).
  * Lazy-loaded and mounted after first paint to reduce TBT on mobile.
  */
-export default function LandingBelowFold({ t, homeContent = '', faqItems, faqOpenIndex, setFaqOpenIndex, cards = [] }) {
+export default function LandingBelowFold({ t, faqItems, faqOpenIndex, setFaqOpenIndex, cards = [] }) {
   const cardEmoji = (iconKey) => CARD_ICON_EMOJI[iconKey] ?? '✨'
-  const hasHomeContent = typeof homeContent === 'string' && homeContent.trim().length > 0
 
   return (
     <>
-      {hasHomeContent && (
-        <section className="landing-section landing-home-content" aria-label="Home page content">
-          <div
-            className="landing-home-content-body"
-            dangerouslySetInnerHTML={{ __html: homeContent }}
-          />
-        </section>
-      )}
       {faqItems.length > 0 && (
         <section className="landing-section landing-faq" aria-labelledby="landing-faq-heading">
           <h2 id="landing-faq-heading" className="landing-section-title">{t('landing.faqTitle')}</h2>

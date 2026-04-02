@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { SeoHead } from './SeoHead'
 import { getHomeSeo } from '../api/cms'
+import { injectHeadSnippet } from '../utils/injectHeadSnippet'
 
 // Default SEO values as fallback
 const DEFAULT_SEO = {
@@ -27,6 +28,7 @@ const DEFAULT_SEO = {
  */
 export default function DynamicSeoHead() {
   const [seoData, setSeoData] = useState(DEFAULT_SEO)
+  const [headSnippet, setHeadSnippet] = useState('')
   const [loading, setLoading] = useState(true)
   const location = useLocation()
 
@@ -61,6 +63,13 @@ export default function DynamicSeoHead() {
     loadSeoData()
     return () => { isMounted = false }
   }, [location.pathname])
+
+  useEffect(() => {
+    const nodes = injectHeadSnippet(headSnippet)
+    return () => {
+      nodes.forEach((n) => n.remove())
+    }
+  }, [headSnippet])
 
   if (loading) return null
 

@@ -574,6 +574,9 @@
   color: var(--text-secondary);
   margin: 0;
   line-height: 1.45;
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
 }
 
 /* How it works steps */
@@ -585,7 +588,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1.5rem;
-  text-align: center;
+  text-align: left;
+  justify-items: stretch;
 }
 
 .landing-step {
@@ -629,6 +633,9 @@
   color: var(--text-secondary);
   margin: 0;
   line-height: 1.4;
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
 }
 
 /* FAQ accordion – full width of content area */
@@ -707,6 +714,9 @@
   color: var(--text-secondary);
   line-height: 1.5;
   padding-top: 0.25rem;
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
 }
 
 /* Upload section – at start for SEO (main CTA above the fold) */
@@ -721,12 +731,13 @@
 }
 
 .landing-upload-heading {
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 4vw, 1.65rem);
   font-weight: 700;
   color: var(--text-primary);
   margin: 0 0 1.25rem;
   line-height: 1.3;
   text-align: center;
+  padding-inline: max(0px, env(safe-area-inset-left, 0px)) max(0px, env(safe-area-inset-right, 0px));
 }
 
 .landing-upload-subtitle {
@@ -775,24 +786,44 @@
   flex-wrap: wrap;
 }
 
+/* Primary landing CTA — large tap target, readable on phone / iPad */
+.landing-upload-cta {
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+}
+
 .btn-select-pdf {
   background: var(--accent-red);
   color: #fff;
   border: none;
-  padding: 1rem 2.25rem;
-  font-size: 1.05rem;
-  font-weight: 600;
-  border-radius: 6px;
+  padding: 1.25rem 2.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(224, 61, 61, 0.35);
-  transition: background 0.2s, box-shadow 0.2s;
-  min-width: 220px;
-  min-height: 56px;
+  box-shadow: 0 4px 20px rgba(224, 61, 61, 0.4);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  min-width: min(100%, 280px);
+  min-height: 64px;
+  width: 100%;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-select-pdf:hover:not(:disabled) {
   background: var(--accent-red-hover);
-  box-shadow: 0 3px 12px rgba(224, 61, 61, 0.4);
+  box-shadow: 0 6px 24px rgba(224, 61, 61, 0.45);
+}
+
+.btn-select-pdf:focus-visible {
+  outline: 3px solid var(--accent-red);
+  outline-offset: 3px;
+}
+
+.btn-select-pdf:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn-select-pdf:disabled {
@@ -1021,62 +1052,6 @@
   text-decoration: underline;
 }
 
-/* Other tools section – same width as content */
-.other-tools {
-  margin-top: 3rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--border-light);
-  width: 100%;
-}
-
-.other-tools-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 1rem;
-}
-
-.other-tools-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: center;
-}
-
-.other-tools-card {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  background: #fff;
-  border: 1px solid var(--border-light);
-  border-radius: 6px;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
-}
-
-.other-tools-card:hover {
-  border-color: var(--accent-red);
-  color: var(--accent-red);
-  box-shadow: 0 0 0 1px var(--accent-red);
-}
-
-.other-tools-icon {
-  font-size: 1.1rem;
-}
-
-.other-tools-card--all {
-  border-color: var(--accent-red);
-  color: var(--accent-red);
-}
-
-.other-tools-card--all:hover {
-  background: #fff5f5;
-}
-
 /* Step 2: File display + settings */
 .step-settings {
   width: 100%;
@@ -1228,8 +1203,206 @@
 }
 
 .btn-compress-large:disabled {
-  opacity: 0.8;
+  opacity: 1;
   cursor: not-allowed;
+  background: #adb5bd;
+  color: #f1f3f5;
+  box-shadow: none;
+}
+
+.btn-compress-large:disabled:hover {
+  background: #adb5bd;
+  box-shadow: none;
+}
+
+.file-display-zone--dragging {
+  outline: 2px dashed var(--accent-red);
+  outline-offset: 4px;
+  border-radius: 8px;
+  background: rgba(224, 61, 61, 0.04);
+}
+
+.file-count-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.link-add-more--disabled,
+.link-add-more:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.settings-hint {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.compress-progress-wrap {
+  margin-top: 1.25rem;
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.compress-progress-bar-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border-light, #e9ecef);
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.compress-progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-red);
+  transition: width 0.2s ease-out;
+}
+
+.compress-file-progress-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  text-align: left;
+}
+
+.compress-file-progress-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.compress-file-progress-item--active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.compress-file-progress-item--done {
+  color: #2e7d32;
+}
+
+.compress-file-progress-status {
+  flex-shrink: 0;
+  width: 1.25rem;
+  text-align: center;
+}
+
+.compress-file-progress-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compress-file-progress-label {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.result-multi-list {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.result-multi-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.result-multi-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-multi-name {
+  display: block;
+  font-weight: 600;
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.result-multi-meta {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.btn-download--compact {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+/* Blog teaser (home + compress) — replaces removed “Other tools” */
+.blog-teaser {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-light);
+  width: 100%;
+  max-width: min(48rem, 100%);
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+.blog-teaser-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.blog-teaser-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.blog-teaser-list li {
+  margin: 0.35rem 0;
+}
+
+.blog-teaser-link {
+  color: var(--accent-red);
+  text-decoration: none;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.blog-teaser-link:hover {
+  text-decoration: underline;
+}
+
+.blog-teaser-all {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-red);
+  text-decoration: none;
+}
+
+.blog-teaser-all:hover {
+  text-decoration: underline;
 }
 
 /* Step 3: Result */
@@ -1422,8 +1595,18 @@
     grid-template-columns: 1fr;
   }
 
-  .other-tools-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .landing-upload-section--first {
+    padding-top: 1.25rem;
+    padding-bottom: 2rem;
+  }
+
+  .landing-upload-cta {
+    max-width: 26rem;
+  }
+
+  .btn-select-pdf {
+    min-height: 60px;
+    font-size: 1.125rem;
   }
 }
 
@@ -1604,15 +1787,6 @@
   .result-share-btns {
     flex-wrap: wrap;
     justify-content: center;
-  }
-
-  .other-tools-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  .other-tools-title {
-    font-size: 1.25rem;
   }
 
   .footer {
