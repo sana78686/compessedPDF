@@ -1,11 +1,17 @@
 import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
-import { supportedLangs, langOptions } from '../i18n/translations'
+import { supportedLangs, langOptions, defaultLang } from '../i18n/translations'
 import { langShortLabel } from '../i18n/langMeta'
+import { getPages, getLegalPage } from '../api/cms'
 import BrandLogo from './BrandLogo'
 import LangFlag from './LangFlag'
 import '../pages/HomePage.css'
+
+function legalBodyPresent(html) {
+  if (html == null || typeof html !== 'string') return false
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length > 0
+}
 
 /* Lazy-load footer for faster LCP */
 const Footer = lazy(() => import('./Footer'))
@@ -36,6 +42,29 @@ export default function SiteLayout({ children }) {
   const t = useTranslation(lang)
   const [langDropdownOpen, setLangDropdownOpen] = useState(false)
   const langDropdownRef = useRef(null)
+  const [footerPages, setFooterPages] = useState([])
+  const [legalInFooter, setLegalInFooter] = useState({ privacy: false, terms: false })
+
+  const locale = supportedLangs.includes(lang) ? lang : defaultLang
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([
+      getPages(locale).catch(() => ({ pages: [] })),
+      getLegalPage('privacy-policy', locale).catch(() => null),
+      getLegalPage('terms', locale).catch(() => null),
+    ]).then(([pagesRes, privacyRes, termsRes]) => {
+      if (cancelled) return
+      setFooterPages(Array.isArray(pagesRes?.pages) ? pagesRes.pages : [])
+      setLegalInFooter({
+        privacy: legalBodyPresent(privacyRes?.content),
+        terms: legalBodyPresent(termsRes?.content),
+      })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [locale])
 
   useEffect(() => {
     if (typeof document !== 'undefined' && lang) {
@@ -72,7 +101,7 @@ export default function SiteLayout({ children }) {
                 aria-label="Select language"
               >
                 <span className="lang-dropdown-flag" aria-hidden>
-                  <LangFlag lang={supportedLangs.includes(lang) ? lang : 'en'} width={22} />
+                  <LangFlag lang={supportedLangs.includes(lang) ? lang : defaultLang} width={22} />
                 </span>
                 <span className="lang-dropdown-label">{langShortLabel[lang] ?? lang?.toUpperCase() ?? 'EN'}</span>
                 <span className="lang-dropdown-chevron" aria-hidden>▼</span>
@@ -105,7 +134,13 @@ export default function SiteLayout({ children }) {
       </main>
 
       <Suspense fallback={<div className="footer-placeholder" aria-hidden="true" />}>
-        <Footer lang={lang} pathname={pathname} t={t} footerPages={[]} />
+        <Footer
+          lang={lang}
+          pathname={pathname}
+          t={t}
+          footerPages={footerPages}
+          legalInFooter={legalInFooter}
+        />
       </Suspense>
     </div>
   )

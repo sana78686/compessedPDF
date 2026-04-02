@@ -1,11 +1,17 @@
 import { useState, useRef, useEffect } from 'react'
-import { supportedLangs, langOptions } from '../i18n/translations'
+import { supportedLangs, langOptions, defaultLang } from '../i18n/translations'
 import LangFlag from './LangFlag'
 import { ucWords } from '../utils/ucWords'
 import './Footer.css'
 
-/** CMS pages: only placement footer or both appear here (header-only pages are omitted). */
-export default function Footer({ lang, pathname, t, footerPages = [] }) {
+/** CMS pages: only placement footer or both appear under OTHER. */
+export default function Footer({
+  lang,
+  pathname,
+  t,
+  footerPages = [],
+  legalInFooter = { privacy: false, terms: false },
+}) {
   const [langOpen, setLangOpen] = useState(false)
   const langRef = useRef(null)
 
@@ -23,7 +29,7 @@ export default function Footer({ lang, pathname, t, footerPages = [] }) {
     }
   }, [langOpen])
 
-  const langPrefix = supportedLangs.includes(lang) ? lang : 'en'
+  const langPrefix = supportedLangs.includes(lang) ? lang : defaultLang
 
   return (
     <footer className="footer footer--dark">
@@ -31,23 +37,31 @@ export default function Footer({ lang, pathname, t, footerPages = [] }) {
         <div className="footer-top">
           <div className="footer-columns">
             <div className="footer-col">
-              <h3 className="footer-col-title">{t('footerProduct')}</h3>
-              <a href={`/${langPrefix}`}>{t('footerHome')}</a>
-              <a href={`/${langPrefix}/tools`}>{t('footerTools')}</a>
-            </div>
-            <div className="footer-col">
               <h3 className="footer-col-title">{t('footerCompany')}</h3>
-              {cmsFooterLinks.map((p) => (
-                <a key={p.id} href={`/${langPrefix}/page/${p.slug}`}>{ucWords(p.title)}</a>
-              ))}
               <a href={`/${langPrefix}/blog`}>{t('footerBlog')}</a>
               <a href={`/${langPrefix}/contact`}>{t('footerContact')}</a>
             </div>
-            <div className="footer-col">
-              <h3 className="footer-col-title">{t('footerLegal')}</h3>
-              <a href={`/${langPrefix}/page/privacy`}>{t('footerPrivacy')}</a>
-              <a href={`/${langPrefix}/page/terms`}>{t('footerTerms')}</a>
-            </div>
+            {cmsFooterLinks.length > 0 && (
+              <div className="footer-col">
+                <h3 className="footer-col-title">{t('footerOther')}</h3>
+                {cmsFooterLinks.map((p) => (
+                  <a key={p.id} href={`/${langPrefix}/page/${p.slug}`}>
+                    {ucWords(p.title)}
+                  </a>
+                ))}
+              </div>
+            )}
+            {(legalInFooter.privacy || legalInFooter.terms) && (
+              <div className="footer-col">
+                <h3 className="footer-col-title">{t('footerLegal')}</h3>
+                {legalInFooter.privacy && (
+                  <a href={`/${langPrefix}/legal/privacy-policy`}>{t('footerPrivacy')}</a>
+                )}
+                {legalInFooter.terms && (
+                  <a href={`/${langPrefix}/legal/terms`}>{t('footerTerms')}</a>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -95,7 +109,16 @@ export default function Footer({ lang, pathname, t, footerPages = [] }) {
               <a href="#instagram" aria-label="Instagram"><span className="footer-social-icon">📷</span></a>
               <a href="#tiktok" aria-label="TikTok"><span className="footer-social-icon">♪</span></a>
             </nav>
-            <p className="footer-copy">{t('footerCopyright')}</p>
+            <p className="footer-copy">
+              <span>{t('footerCopyrightPrefix')}</span>
+              <a
+                href="https://apimstec.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t('footerPoweredBy')}
+              </a>
+            </p>
           </div>
         </div>
       </div>

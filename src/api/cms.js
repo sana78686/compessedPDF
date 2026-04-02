@@ -52,7 +52,7 @@ async function request(path, options = {}) {
   return res.json()
 }
 
-/** @param {string} [locale] - BCP-style code: en, ms, es, fr, ar, ru */
+/** @param {string} [locale] - BCP-style code: id, en, ms, es, fr, ar, ru */
 export function getPages(locale) {
   return request('/pages', { locale })
 }
@@ -137,7 +137,8 @@ export function getHomeSeo(locale) {
 /**
  * Legal/content page by slug: terms, privacy-policy, disclaimer, about-us, cookie-policy.
  * @param {string} slug
+ * @param {string} [locale]
  */
-export function getLegalPage(slug) {
-  return request(`/legal/${encodeURIComponent(slug)}`)
+export function getLegalPage(slug, locale) {
+  return request(`/legal/${encodeURIComponent(slug)}`, { locale })
 }

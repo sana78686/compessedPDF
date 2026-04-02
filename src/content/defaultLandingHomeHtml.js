@@ -7,6 +7,13 @@ function siteName() {
 }
 
 const SHORT_BY_LANG = {
+  id: (name) => `
+<section class="default-landing-seo">
+  <p class="default-landing-lead"><strong>${name}</strong> membantu Anda memperkecil file PDF di peramban. Tanpa instalasi: pilih file, tunggu sebentar, unduh PDF yang lebih ringan untuk dikirim lewat email atau diunggah ke formulir.</p>
+  <h2>Apa itu “kompres PDF”?</h2>
+  <p>Artinya mengurangi ukuran file sambil dokumen tetap nyaman dibaca atau dicetak. Cocok untuk faktur, tugas, dan hasil pindaian.</p>
+  <p class="default-landing-note">Ganti teks ini dengan konten lengkap di CMS untuk bahasa Indonesia jika perlu.</p>
+</section>`.trim(),
   ms: (name) => `
 <section class="default-landing-seo">
   <p class="default-landing-lead"><strong>${name}</strong> membantu anda memampatkan fail PDF dalam pelayar. Tiada pemasangan diperlukan. Pilih fail, tunggu sebentar, dan muat turun PDF yang lebih kecil untuk dihantar melalui e-mel atau dimuat naik ke borang.</p>
@@ -44,7 +51,7 @@ const SHORT_BY_LANG = {
 </section>`.trim(),
 }
 
-export function getDefaultLandingHomeHtml(lang = 'en') {
+export function getDefaultLandingHomeHtml(lang = 'id') {
   const name = siteName()
   const builder = SHORT_BY_LANG[lang]
   if (builder) return builder(name)

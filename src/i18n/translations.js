@@ -1,5 +1,8 @@
+import idTranslations from './translations.id.js'
+
 /**
- * UI strings: en, ms (Malay), es, fr, ar, ru. Missing keys fall back to English (see getTranslation).
+ * UI strings: id (Indonesian), en, ms (Malay), es, fr, ar, ru.
+ * Missing keys fall back to English (see getTranslation).
  */
 export const translations = {
   en: {
@@ -63,7 +66,9 @@ export const translations = {
     footerAbout: 'About us',
     footerContact: 'Contact us',
     footerBlog: 'Blog',
-    footerCopyright: '© compressedPDF 2026 ® – Your PDF Editor',
+    footerOther: 'OTHER',
+    footerCopyrightPrefix: '© compressedPDF 2026 ® – ',
+    footerPoweredBy: 'powered by Apimstec',
     footerLanguage: 'English',
     footerGetGooglePlay: 'GET IT ON Google Play',
     footerDownloadAppStore: 'Download on the App Store',
@@ -212,6 +217,7 @@ export const translations = {
       backToBlog: 'Back to blog',
     },
   },
+  id: idTranslations,
   ms: {
     logoMark: 'Mampatkan PDF',
     nav: {
@@ -241,7 +247,8 @@ export const translations = {
       faqTitle: 'Soalan lazim',
       featuresTitle: 'Mengapa alat kami?',
     },
-    footerCopyright: '© compressedPDF 2026 ® – Penyunting PDF anda',
+    footerCopyrightPrefix: '© compressedPDF 2026 ® – ',
+    footerPoweredBy: 'dikuasakan oleh Apimstec',
     footerLanguage: 'Bahasa Melayu',
     blog: {
       listTitle: 'Blog',
@@ -280,7 +287,8 @@ export const translations = {
       faqTitle: 'Preguntas frecuentes',
       featuresTitle: '¿Por qué usar nuestro compresor?',
     },
-    footerCopyright: '© compressedPDF 2026 ® – Tu editor PDF',
+    footerCopyrightPrefix: '© compressedPDF 2026 ® – ',
+    footerPoweredBy: 'impulsado por Apimstec',
     footerLanguage: 'Español',
     blog: {
       listTitle: 'Blog',
@@ -319,7 +327,8 @@ export const translations = {
       faqTitle: 'Questions fréquentes',
       featuresTitle: 'Pourquoi notre compresseur ?',
     },
-    footerCopyright: '© compressedPDF 2026 ® – Votre éditeur PDF',
+    footerCopyrightPrefix: '© compressedPDF 2026 ® – ',
+    footerPoweredBy: 'propulsé par Apimstec',
     footerLanguage: 'Français',
     blog: {
       listTitle: 'Blog',
@@ -358,7 +367,8 @@ export const translations = {
       faqTitle: 'الأسئلة الشائعة',
       featuresTitle: 'لماذا أداتنا؟',
     },
-    footerCopyright: '© compressedPDF 2026 ® – محرر PDF',
+    footerCopyrightPrefix: '© compressedPDF 2026 ® – ',
+    footerPoweredBy: 'مدعوم من Apimstec',
     footerLanguage: 'العربية',
     blog: {
       listTitle: 'المدونة',
@@ -397,7 +407,8 @@ export const translations = {
       faqTitle: 'Частые вопросы',
       featuresTitle: 'Почему наш компрессор?',
     },
-    footerCopyright: '© compressedPDF 2026 ® – Ваш PDF-редактор',
+    footerCopyrightPrefix: '© compressedPDF 2026 ® – ',
+    footerPoweredBy: 'поддерживается Apimstec',
     footerLanguage: 'Русский',
     blog: {
       listTitle: 'Блог',
@@ -409,37 +420,73 @@ export const translations = {
   },
 }
 
-export const supportedLangs = ['en', 'ms', 'es', 'fr', 'ar', 'ru']
-export const defaultLang = 'en'
+/** App default when geo/timezone/browser do not pick another locale (compresspdf.id → Indonesia). */
+export const defaultLang = 'id'
+
+export const supportedLangs = ['id', 'en', 'ms', 'es', 'fr', 'ar', 'ru']
+
+/** Strings always resolve from English if missing in the active locale (avoids recursion when defaultLang is id). */
+const TRANSLATION_FALLBACK = 'en'
+
+const LOCALE_HINT_KEY = 'compresspdf_locale_hint'
+const LOCALE_HINT_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+export function readLocaleHintCache() {
+  if (typeof sessionStorage === 'undefined') return null
+  try {
+    const raw = sessionStorage.getItem(LOCALE_HINT_KEY)
+    if (!raw) return null
+    const { lang, t } = JSON.parse(raw)
+    if (typeof lang !== 'string' || typeof t !== 'number') return null
+    if (Date.now() - t > LOCALE_HINT_TTL_MS) {
+      sessionStorage.removeItem(LOCALE_HINT_KEY)
+      return null
+    }
+    return supportedLangs.includes(lang) ? lang : null
+  } catch {
+    return null
+  }
+}
+
+export function writeLocaleHintCache(lang) {
+  if (typeof sessionStorage === 'undefined') return
+  if (!supportedLangs.includes(lang)) return
+  try {
+    sessionStorage.setItem(LOCALE_HINT_KEY, JSON.stringify({ lang, t: Date.now() }))
+  } catch {
+    /* private mode */
+  }
+}
 
 /** Language option for dropdown: flag emoji + label */
 export const langOptions = {
+  id: { flag: '🇮🇩', label: 'Bahasa Indonesia' },
   en: { flag: '🇬🇧', label: 'English' },
-  ms: { flag: '🇲🇾', label: 'Malaysia (Malay)' },
+  ms: { flag: '🇲🇾', label: 'Bahasa Melayu' },
   es: { flag: '🇪🇸', label: 'Español' },
   fr: { flag: '🇫🇷', label: 'Français' },
   ar: { flag: '🇸🇦', label: 'العربية' },
   ru: { flag: '🇷🇺', label: 'Русский' },
 }
 
-/** Map browser codes (e.g. id→ms for Malay region) to our supported set */
+/** Map full browser locale tags to app lang (ISO 639-1). */
 const BROWSER_LANG_ALIASES = {
-  id: 'ms',
-  my: 'ms',
+  'id-id': 'id',
   'ms-my': 'ms',
   'en-my': 'ms',
+  my: 'ms',
 }
 
 /**
- * Detect preferred language from browser. Returns a supported lang code or defaultLang.
+ * Browser language list only (no geo cache). Used inside async geo resolver.
  */
-export function getPreferredLang() {
+export function getPreferredLangFromBrowser() {
   if (typeof navigator === 'undefined') return defaultLang
   const locales = navigator.languages && navigator.languages.length
     ? navigator.languages
     : [navigator.language]
   for (const locale of locales) {
-    const full = (locale || '').toLowerCase()
+    const full = (locale || '').toLowerCase().replace(/_/g, '-')
     if (BROWSER_LANG_ALIASES[full]) return BROWSER_LANG_ALIASES[full]
     const code = full.split('-')[0]
     if (BROWSER_LANG_ALIASES[code]) return BROWSER_LANG_ALIASES[code]
@@ -448,12 +495,25 @@ export function getPreferredLang() {
   return defaultLang
 }
 
+/**
+ * Sync preferred lang: session hint (from geo) → browser → default (Indonesia).
+ */
+export function getPreferredLang() {
+  if (typeof window !== 'undefined') {
+    const cached = readLocaleHintCache()
+    if (cached) return cached
+  }
+  return getPreferredLangFromBrowser()
+}
+
 export function getTranslation(lang, keyPath) {
-  const langData = translations[lang] ?? translations[defaultLang]
+  const langData = translations[lang] ?? translations[TRANSLATION_FALLBACK]
   const keys = keyPath.split('.')
   let value = langData
   for (const k of keys) {
     value = value?.[k]
   }
-  return value ?? (translations[defaultLang] ? getTranslation(defaultLang, keyPath) : keyPath)
+  if (value !== undefined && value !== null) return value
+  if (lang !== TRANSLATION_FALLBACK) return getTranslation(TRANSLATION_FALLBACK, keyPath)
+  return keyPath
 }

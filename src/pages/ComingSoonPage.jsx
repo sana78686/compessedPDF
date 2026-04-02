@@ -1,12 +1,13 @@
 import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
+import { defaultLang } from '../i18n/translations'
 import { useEffect } from 'react'
 import { SeoHead } from '../components/SeoHead'
 import './HomePage.css'
 import './ComingSoonPage.css'
 
 function ComingSoonPage() {
-  const { lang = 'en' } = useParams()
+  const { lang = defaultLang } = useParams()
   const t = useTranslation(lang)
 
   useEffect(() => {

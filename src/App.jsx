@@ -4,6 +4,7 @@ import SiteLayout from './components/SiteLayout'
 import HomePage from './pages/HomePage'
 import DynamicSeoHead from './components/DynamicSeoHead'
 import { supportedLangs, getPreferredLang } from './i18n/translations'
+import GeoLangRedirect from './components/GeoLangRedirect'
 
 /* Route-level code splitting: keep initial bundle small for LCP/TBT (Lighthouse Performance) */
 const AllToolsPage = lazy(() => import('./pages/AllToolsPage'))
@@ -20,11 +21,6 @@ function LangGuard({ children }) {
     return <Navigate to={`/${getPreferredLang()}`} replace />
   }
   return children
-}
-
-function PreferredLangRedirect() {
-  const lang = getPreferredLang()
-  return <Navigate to={`/${lang}`} replace />
 }
 
 function PageFallback() {
@@ -50,7 +46,7 @@ function App() {
     <>
       <DynamicSeoHead />
       <Routes>
-        <Route path="/" element={<PreferredLangRedirect />} />
+        <Route path="/" element={<GeoLangRedirect />} />
         <Route element={<LangGuard><SiteLayoutWrapper /></LangGuard>}>
           <Route path="/:lang/tools" element={<AllToolsPage />} />
           <Route path="/:lang/compress/result" element={<HomePage />} />
@@ -63,7 +59,7 @@ function App() {
           <Route path="/:lang/:tool" element={<ComingSoonPage />} />
           <Route path="/:lang" element={<HomePage />} />
         </Route>
-        <Route path="*" element={<PreferredLangRedirect />} />
+        <Route path="*" element={<GeoLangRedirect />} />
       </Routes>
     </>
   )

@@ -21,7 +21,7 @@ export default function LegalContentPage() {
     }
     setLoading(true)
     setError(null)
-    getLegalPage(slug)
+    getLegalPage(slug, lang)
       .then(setData)
       .catch(() => setError('Page not found.'))
       .finally(() => setLoading(false))

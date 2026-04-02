@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getPages, getBlogs } from '../api/cms'
-import { supportedLangs } from '../i18n/translations'
+import { supportedLangs, defaultLang } from '../i18n/translations'
 
 export function CmsPagesSection() {
   const { lang } = useParams()
@@ -9,7 +9,7 @@ export function CmsPagesSection() {
   const [blogs, setBlogs] = useState([])
   const [loaded, setLoaded] = useState(false)
 
-  const langPrefix = supportedLangs.includes(lang) ? lang : 'en'
+  const langPrefix = supportedLangs.includes(lang) ? lang : defaultLang
 
   useEffect(() => {
     let cancelled = false

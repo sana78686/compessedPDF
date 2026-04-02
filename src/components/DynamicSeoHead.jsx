@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { SeoHead } from './SeoHead'
 import { getHomeSeo } from '../api/cms'
+import { defaultLang } from '../i18n/translations'
 import { injectHeadSnippet } from '../utils/injectHeadSnippet'
 
 // Default SEO values as fallback
@@ -35,7 +36,7 @@ export default function DynamicSeoHead() {
   useEffect(() => {
     let isMounted = true
     const pathMatch = location.pathname.match(/^\/([a-z]{2})(\/|$)/)
-    const locale = pathMatch && pathMatch[1] ? pathMatch[1] : 'en'
+    const locale = pathMatch && pathMatch[1] ? pathMatch[1] : defaultLang
 
     async function loadSeoData() {
       try {

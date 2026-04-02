@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense, startTransition, useMemo } from 'react'
 import { useLocation, useNavigate, useParams, Link } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
+import { defaultLang } from '../i18n/translations'
 import { getFaq, getHomeCards, getBlogs } from '../api/cms'
 import './HomePage.css'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
@@ -45,7 +46,7 @@ function parseCompressionSettings(settings) {
 }
 
 function HomePage() {
-  const { lang = 'en' } = useParams()
+  const { lang = defaultLang } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
   const pathname = location.pathname

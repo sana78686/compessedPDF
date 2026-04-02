@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
+import { defaultLang } from '../i18n/translations'
 import { SeoHead } from '../components/SeoHead'
 import './HomePage.css'
 import './AllToolsPage.css'
@@ -33,7 +34,7 @@ const TOOLS_LIST = [
 ]
 
 function AllToolsPage() {
-  const { lang = 'en' } = useParams()
+  const { lang = defaultLang } = useParams()
   const t = useTranslation(lang)
 
   useEffect(() => {

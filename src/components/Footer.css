@@ -198,6 +198,16 @@ footer.footer.footer--dark .footer-copy {
   text-align: right;
 }
 
+footer.footer.footer--dark .footer-copy a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+footer.footer.footer--dark .footer-copy a:hover {
+  color: #fff;
+}
+
 @media (max-width: 900px) {
   footer.footer.footer--dark .footer-top {
     flex-direction: column;
