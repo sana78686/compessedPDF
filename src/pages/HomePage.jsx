@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, lazy, Suspense, startTransiti
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { getFaq, getHomeCards, getHomePageContent } from '../api/cms'
+import { getDefaultLandingHomeHtml } from '../content/defaultLandingHomeHtml'
 import './HomePage.css'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
@@ -76,9 +77,12 @@ function HomePage() {
     getHomePageContent()
       .then((res) => {
         if (cancelled) return
-        setLandingHomeContent(typeof res.content === 'string' ? res.content : '')
+        const raw = typeof res.content === 'string' ? res.content.trim() : ''
+        setLandingHomeContent(raw || getDefaultLandingHomeHtml())
       })
-      .catch(() => { if (!cancelled) setLandingHomeContent(''); })
+      .catch(() => {
+        if (!cancelled) setLandingHomeContent(getDefaultLandingHomeHtml())
+      })
     return () => { cancelled = true }
   }, [isHomeLanding, lang])
 

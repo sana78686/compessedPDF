@@ -1,8 +1,7 @@
-import { useState, useRef, useEffect, useMemo, lazy, Suspense } from 'react'
+import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { supportedLangs, langOptions } from '../i18n/translations'
-import { getPages } from '../api/cms'
 import { PORTAL_LOGIN_URL, PORTAL_DASHBOARD_URL } from '../config/portal'
 import { ucWords } from '../utils/ucWords'
 import '../pages/HomePage.css'
@@ -13,7 +12,6 @@ const Footer = lazy(() => import('./Footer'))
 const MegaMenu = lazy(() => import('./MegaMenu'))
 const ConvertMegaMenu = lazy(() => import('./ConvertMegaMenu'))
 
-// Cookie name the portal can set on login (e.g. on .compresspdf.id) to show Dashboard instead of Login
 const PORTAL_SESSION_COOKIE = 'compressedpdf_portal_session'
 
 export default function SiteLayout({ children }) {
@@ -21,31 +19,12 @@ export default function SiteLayout({ children }) {
   const location = useLocation()
   const pathname = location.pathname
   const t = useTranslation(lang)
-  const [cmsPages, setCmsPages] = useState([])
   const [langDropdownOpen, setLangDropdownOpen] = useState(false)
   const [megaMenuOpen, setMegaMenuOpen] = useState(false)
   const [isPortalLoggedIn, setIsPortalLoggedIn] = useState(false)
   const langDropdownRef = useRef(null)
   const megaMenuRef = useRef(null)
   const megaMenuPanelRef = useRef(null)
-
-  const headerPages = cmsPages.filter((p) => !p.placement || p.placement === 'header' || p.placement === 'both')
-  const footerPages = cmsPages.filter((p) => !p.placement || p.placement === 'footer' || p.placement === 'both')
-
-  /** Header nav tree: roots + pages whose parent is not in this nav (so they are not hidden). */
-  const headerNavTree = useMemo(() => {
-    const ids = new Set(headerPages.map((p) => p.id))
-    const roots = headerPages
-      .filter((p) => p.parent_id == null || !ids.has(p.parent_id))
-      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    return roots.map((root) => ({
-      ...root,
-      children: headerPages.filter((p) => p.parent_id === root.id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
-    }))
-  }, [headerPages])
-
-  const [cmsDropdownOpenId, setCmsDropdownOpenId] = useState(null)
-  const cmsDropdownRef = useRef(null)
   const [convertMenuOpen, setConvertMenuOpen] = useState(false)
   const convertMenuRef = useRef(null)
 
@@ -60,36 +39,12 @@ export default function SiteLayout({ children }) {
   }, [lang])
 
   useEffect(() => {
-    const id = requestIdleCallback
-        ? requestIdleCallback(() => {
-          getPages()
-            .then((res) => setCmsPages(res.pages || []))
-            .catch((err) => {
-              if (import.meta.env.DEV) console.warn('[cms] getPages failed — check API URL, CORS, and VITE_SITE_DOMAIN vs CMS Domains row:', err)
-              setCmsPages([])
-            })
-        }, { timeout: 2000 })
-      : setTimeout(() => {
-          getPages()
-            .then((res) => setCmsPages(res.pages || []))
-            .catch((err) => {
-              if (import.meta.env.DEV) console.warn('[cms] getPages failed — check API URL, CORS, and VITE_SITE_DOMAIN vs CMS Domains row:', err)
-              setCmsPages([])
-            })
-        }, 0)
-    return () => (requestIdleCallback ? cancelIdleCallback(id) : clearTimeout(id))
-  }, [])
-
-  useEffect(() => {
     function handleClickOutside(e) {
       if (langDropdownRef.current && !langDropdownRef.current.contains(e.target)) {
         setLangDropdownOpen(false)
       }
       if (megaMenuRef.current && !megaMenuRef.current.contains(e.target)) {
         setMegaMenuOpen(false)
-      }
-      if (cmsDropdownRef.current && !cmsDropdownRef.current.contains(e.target)) {
-        setCmsDropdownOpenId(null)
       }
       if (convertMenuRef.current && !convertMenuRef.current.contains(e.target)) {
         setConvertMenuOpen(false)
@@ -98,15 +53,14 @@ export default function SiteLayout({ children }) {
         setMegaMenuOpen(false)
       }
     }
-    if (langDropdownOpen || megaMenuOpen || cmsDropdownOpenId != null || convertMenuOpen) {
+    if (langDropdownOpen || megaMenuOpen || convertMenuOpen) {
       document.addEventListener('click', handleClickOutside)
       return () => document.removeEventListener('click', handleClickOutside)
     }
-  }, [langDropdownOpen, megaMenuOpen, cmsDropdownOpenId, convertMenuOpen])
+  }, [langDropdownOpen, megaMenuOpen, convertMenuOpen])
 
   useEffect(() => {
     setMegaMenuOpen(false)
-    setCmsDropdownOpenId(null)
     setConvertMenuOpen(false)
   }, [pathname])
 
@@ -128,7 +82,6 @@ export default function SiteLayout({ children }) {
                 onClick={() => {
                   setConvertMenuOpen((o) => !o)
                   setMegaMenuOpen(false)
-                  setCmsDropdownOpenId(null)
                 }}
                 aria-expanded={convertMenuOpen}
                 aria-haspopup="true"
@@ -145,42 +98,6 @@ export default function SiteLayout({ children }) {
             </div>
             <a href={`/${lang}/blog`}>{ucWords(t('footerBlog'))}</a>
             <a href={`/${lang}/contact`}>{ucWords(t('footerContact'))}</a>
-            <div className="nav-cms-wrap" ref={cmsDropdownRef}>
-              {headerNavTree.map((node) =>
-                node.children.length > 0 ? (
-                  <div key={node.id} className="nav-cms-dropdown-wrap">
-                    <button
-                      type="button"
-                      className={`nav-link nav-cms-trigger ${cmsDropdownOpenId === node.id ? 'nav-cms-trigger--open' : ''}`}
-                      onClick={() => setCmsDropdownOpenId((id) => (id === node.id ? null : node.id))}
-                      aria-expanded={cmsDropdownOpenId === node.id}
-                      aria-haspopup="true"
-                    >
-                      {ucWords(node.title)}
-                      <span className="nav-cms-chevron" aria-hidden>{cmsDropdownOpenId === node.id ? '▲' : '▼'}</span>
-                    </button>
-                  {cmsDropdownOpenId === node.id && (
-                    <ul className="nav-cms-dropdown" role="menu">
-                      <li role="none">
-                        <a href={`/${lang}/page/${node.slug}`} role="menuitem" onClick={() => setCmsDropdownOpenId(null)}>
-                          {ucWords(node.title)}
-                        </a>
-                      </li>
-                      {node.children.map((child) => (
-                        <li key={child.id} role="none">
-                          <a href={`/${lang}/page/${child.slug}`} role="menuitem" onClick={() => setCmsDropdownOpenId(null)}>
-                            {ucWords(child.title)}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  </div>
-                ) : (
-                  <a key={node.id} href={`/${lang}/page/${node.slug}`}>{ucWords(node.title)}</a>
-                )
-              )}
-            </div>
             <div className="nav-mega-wrap" ref={megaMenuRef}>
               <button
                 type="button"
@@ -262,7 +179,7 @@ export default function SiteLayout({ children }) {
       </main>
 
       <Suspense fallback={<div className="footer-placeholder" aria-hidden="true" />}>
-        <Footer lang={lang} pathname={pathname} t={t} footerPages={footerPages} />
+        <Footer lang={lang} pathname={pathname} t={t} footerPages={[]} />
       </Suspense>
     </div>
   )

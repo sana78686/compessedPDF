@@ -3,9 +3,14 @@ import { supportedLangs, langOptions } from '../i18n/translations'
 import { ucWords } from '../utils/ucWords'
 import './Footer.css'
 
+/** CMS pages: only placement footer or both appear here (header-only pages are omitted). */
 export default function Footer({ lang, pathname, t, footerPages = [] }) {
   const [langOpen, setLangOpen] = useState(false)
   const langRef = useRef(null)
+
+  const cmsFooterLinks = footerPages.filter(
+    (p) => p.placement === 'footer' || p.placement === 'both',
+  )
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -41,7 +46,7 @@ export default function Footer({ lang, pathname, t, footerPages = [] }) {
             </div>
             <div className="footer-col">
               <h3 className="footer-col-title">{t('footerCompany')}</h3>
-              {footerPages.map((p) => (
+              {cmsFooterLinks.map((p) => (
                 <a key={p.id} href={`/${langPrefix}/page/${p.slug}`}>{ucWords(p.title)}</a>
               ))}
               <a href={`/${langPrefix}/contact`}>{t('footerContact')}</a>
