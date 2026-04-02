@@ -4,6 +4,11 @@ import { SeoHead } from './SeoHead'
 import { getHomeSeo } from '../api/cms'
 import { defaultLang } from '../i18n/translations'
 import { injectHeadSnippet } from '../utils/injectHeadSnippet'
+import { headSnippetReferencesGaId, injectGa4 } from '../utils/injectGa4'
+
+const envGaFallback = (typeof import.meta.env.VITE_GA_MEASUREMENT_ID === 'string'
+  ? import.meta.env.VITE_GA_MEASUREMENT_ID
+  : '').trim()
 
 // Default SEO values as fallback
 const DEFAULT_SEO = {
@@ -19,17 +24,19 @@ const DEFAULT_SEO = {
 }
 
 /**
- * Fetches home-page SEO from the CMS once, then re-applies it on every
- * navigation so tags are never left stale after a page-specific SeoHead unmounts.
+ * Loads home SEO + optional `head_snippet` and GA4 ID from the CMS public API
+ * (`/home-content`) and injects them into document.head for crawlers and analytics.
  *
- * The `key` tied to `location.pathname` forces SeoHead to re-mount on every
- * route change, which re-runs its useEffect and re-injects the home SEO.
- * Page-specific SeoHeads (CmsPage, CmsBlog) mount AFTER this one in the React
- * tree, so their useEffect runs last and correctly overrides on non-home routes.
+ * Where to configure in CMS:
+ *  - Content Manager → Home → “Frontend &lt;head&gt; snippet” (meta verification, GTM, custom scripts)
+ *  - SEO → Analytics → GA4 Measurement ID (injects gtag unless the same ID is already in the snippet)
+ *
+ * Dev fallback: `VITE_GA_MEASUREMENT_ID` in `.env` when the API has no ID.
  */
 export default function DynamicSeoHead() {
   const [seoData, setSeoData] = useState(DEFAULT_SEO)
   const [headSnippet, setHeadSnippet] = useState('')
+  const [gaMeasurementId, setGaMeasurementId] = useState(envGaFallback)
   const [loading, setLoading] = useState(true)
   const location = useLocation()
 
@@ -41,19 +48,21 @@ export default function DynamicSeoHead() {
     async function loadSeoData() {
       try {
         const data = await getHomeSeo(locale)
-        if (isMounted) {
-          setSeoData({
-            meta_title:       data.meta_title       || DEFAULT_SEO.meta_title,
-            meta_description: data.meta_description || DEFAULT_SEO.meta_description,
-            meta_keywords:    data.meta_keywords    || DEFAULT_SEO.meta_keywords,
-            focus_keyword:    data.focus_keyword    || DEFAULT_SEO.focus_keyword,
-            og_title:         data.og_title         || DEFAULT_SEO.og_title,
-            og_description:   data.og_description   || DEFAULT_SEO.og_description,
-            og_image:         data.og_image         || DEFAULT_SEO.og_image,
-            meta_robots:      data.meta_robots      || DEFAULT_SEO.meta_robots,
-            canonical_url:    data.canonical_url    || DEFAULT_SEO.canonical_url,
-          })
-        }
+        if (!isMounted) return
+        setSeoData({
+          meta_title:       data.meta_title       || DEFAULT_SEO.meta_title,
+          meta_description: data.meta_description || DEFAULT_SEO.meta_description,
+          meta_keywords:    data.meta_keywords    || DEFAULT_SEO.meta_keywords,
+          focus_keyword:    data.focus_keyword    || DEFAULT_SEO.focus_keyword,
+          og_title:         data.og_title         || DEFAULT_SEO.og_title,
+          og_description:   data.og_description   || DEFAULT_SEO.og_description,
+          og_image:         data.og_image         || DEFAULT_SEO.og_image,
+          meta_robots:      data.meta_robots      || DEFAULT_SEO.meta_robots,
+          canonical_url:    data.canonical_url    || DEFAULT_SEO.canonical_url,
+        })
+        setHeadSnippet(typeof data.head_snippet === 'string' ? data.head_snippet : '')
+        const cmsGa = typeof data.ga_measurement_id === 'string' ? data.ga_measurement_id.trim() : ''
+        setGaMeasurementId(cmsGa || envGaFallback)
       } catch (error) {
         console.warn('Failed to load SEO data from CMS, using defaults:', error)
       } finally {
@@ -66,19 +75,17 @@ export default function DynamicSeoHead() {
   }, [location.pathname])
 
   useEffect(() => {
-    const nodes = injectHeadSnippet(headSnippet)
+    const fromSnippet = injectHeadSnippet(headSnippet)
+    const skipGa = headSnippetReferencesGaId(headSnippet, gaMeasurementId)
+    const fromGa = gaMeasurementId && !skipGa ? injectGa4(gaMeasurementId) : []
     return () => {
-      nodes.forEach((n) => n.remove())
+      fromSnippet.forEach((n) => n.remove())
+      fromGa.forEach((n) => n.remove())
     }
-  }, [headSnippet])
+  }, [headSnippet, gaMeasurementId])
 
   if (loading) return null
 
-  // key=location.pathname forces SeoHead to re-mount on every navigation.
-  // This guarantees CMS meta tags are always re-injected when returning to any
-  // route — even after a page-specific SeoHead's cleanup ran on the previous page.
-  // Page-specific SeoHeads (deeper in the React tree) run their useEffect AFTER
-  // this one and override correctly on pages that have their own SEO data.
   return (
     <SeoHead
       key={location.pathname}
