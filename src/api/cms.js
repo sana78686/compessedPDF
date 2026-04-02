@@ -1,5 +1,8 @@
 import { CMS_API_BASE, CMS_SITE_DOMAIN, normalizeSiteDomain } from '../config/cms.js'
 
+/** false = /api/public/* + X-Domain (use if WAF returns 403 on /{domain}/api/public/*). */
+const useDomainInApiPath = import.meta.env.VITE_API_DOMAIN_PATH !== 'false'
+
 /** Current site host for public API path (browser) or env fallback (SSR/build tools). */
 function resolveSiteDomainForApi() {
   if (typeof window !== 'undefined' && window.location?.hostname) {
@@ -13,20 +16,27 @@ function resolveSiteDomainForApi() {
   return CMS_SITE_DOMAIN
 }
 
-/** Path prefix: /compresspdf.id/api/public — tenant is first segment (same CMS for all sites). */
+/** Path: /{host}/api/public (default) or /api/public (legacy when VITE_API_DOMAIN_PATH=false). */
 function publicApiRoot() {
+  if (!useDomainInApiPath) {
+    return '/api/public'
+  }
   const host = resolveSiteDomainForApi()
   return `/${host}/api/public`
 }
 
 async function request(path, options = {}) {
   const url = `${CMS_API_BASE}${publicApiRoot()}${path}`
+  const headers = {
+    Accept: 'application/json',
+    ...options.headers,
+  }
+  if (!useDomainInApiPath) {
+    headers['X-Domain'] = resolveSiteDomainForApi()
+  }
   const res = await fetch(url, {
     ...options,
-    headers: {
-      Accept: 'application/json',
-      ...options.headers,
-    },
+    headers,
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))

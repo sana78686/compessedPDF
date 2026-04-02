@@ -61,11 +61,15 @@ function cmsSeoInjectPlugin(viteEnv) {
               (isDevServer ? 'http://localhost:8000' : 'https://app.apimstec.com')
             ).replace(/\/$/, '')
             const siteDomain = normalizeSiteDomain(viteEnv.VITE_SITE_DOMAIN || 'compresspdf.id')
-            const res = await fetch(`${apiBase}/${siteDomain}/api/public/home-content`, {
-              headers: {
-                Accept: 'application/json',
-              },
-            })
+            const useDomainPath = viteEnv.VITE_API_DOMAIN_PATH !== 'false'
+            const homeUrl = useDomainPath
+              ? `${apiBase}/${siteDomain}/api/public/home-content`
+              : `${apiBase}/api/public/home-content`
+            const headers = { Accept: 'application/json' }
+            if (!useDomainPath) {
+              headers['X-Domain'] = siteDomain
+            }
+            const res = await fetch(homeUrl, { headers })
             if (!res.ok) throw new Error(`HTTP ${res.status}`)
             data = await res.json()
             if (!isDevServer) buildCache = data  // cache only for build pass
