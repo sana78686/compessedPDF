@@ -7,11 +7,27 @@ import { CMS_API_BASE, CMS_SITE_DOMAIN, normalizeSiteDomain } from '../config/cm
  */
 const useDomainInApiPath = import.meta.env.VITE_API_DOMAIN_PATH !== 'false'
 
+/** Client-side cache TTL for public GET (ms). Same-tab revisits + navigations feel instant. */
+const CMS_CACHE_TTL_MS = Math.max(
+  0,
+  Number.parseInt(String(import.meta.env.VITE_CMS_CACHE_MS ?? '120000'), 10) || 120000,
+)
+
+/** Persist GET responses in sessionStorage (survives full reload in the same tab). */
+const CMS_SESSION_CACHE =
+  String(import.meta.env.VITE_CMS_SESSION_CACHE ?? 'true').toLowerCase() !== 'false'
+
+const STORAGE_PREFIX = 'cms:v1:'
+
+/** @type {Map<string, { expires: number, data: unknown }>} */
+const memoryCache = new Map()
+/** @type {Map<string, Promise<unknown>>} */
+const inflight = new Map()
+
 /** Current site host for public API path (browser) or env fallback (SSR/build tools). */
 function resolveSiteDomainForApi() {
   if (typeof window !== 'undefined' && window.location?.hostname) {
     const h = normalizeSiteDomain(window.location.hostname)
-    // Dev: Vite is often localhost while CMS domain is compresspdf.id (or set in .env).
     if (h === 'localhost' || h === '127.0.0.1') {
       return CMS_SITE_DOMAIN
     }
@@ -26,13 +42,112 @@ function withLocaleQuery(path, locale) {
   return `${path}${joiner}locale=${encodeURIComponent(locale)}`
 }
 
+function cacheKey(host, path, locale) {
+  return `${host}|${withLocaleQuery(path, locale)}`
+}
+
+function cloneJson(data) {
+  if (data === null || typeof data !== 'object') return data
+  return JSON.parse(JSON.stringify(data))
+}
+
+function readSessionCache(key) {
+  if (!CMS_SESSION_CACHE || typeof sessionStorage === 'undefined') return null
+  try {
+    const raw = sessionStorage.getItem(STORAGE_PREFIX + key)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed.expires !== 'number' || parsed.expires <= Date.now()) {
+      sessionStorage.removeItem(STORAGE_PREFIX + key)
+      return null
+    }
+    return parsed.data
+  } catch {
+    return null
+  }
+}
+
+function writeSessionCache(key, data, expiresAt) {
+  if (!CMS_SESSION_CACHE || typeof sessionStorage === 'undefined') return
+  try {
+    sessionStorage.setItem(
+      STORAGE_PREFIX + key,
+      JSON.stringify({ expires: expiresAt, data }),
+    )
+  } catch {
+    // Quota exceeded — ignore
+  }
+}
+
+/**
+ * Drop all cached CMS GET responses (memory + session). Useful after publishing in CMS.
+ */
+export function clearCmsApiCache() {
+  memoryCache.clear()
+  inflight.clear()
+  if (typeof sessionStorage === 'undefined') return
+  try {
+    const keys = []
+    for (let i = 0; i < sessionStorage.length; i += 1) {
+      const k = sessionStorage.key(i)
+      if (k && k.startsWith(STORAGE_PREFIX)) keys.push(k)
+    }
+    keys.forEach((k) => sessionStorage.removeItem(k))
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * @param {string} path - e.g. `/legal/terms`
  * @param {Record<string, unknown>} options
  */
 async function request(path, options = {}) {
   const { locale, ...fetchOptions } = options
+  const method = String(fetchOptions.method || 'GET').toUpperCase()
   const host = resolveSiteDomainForApi()
+
+  if (method !== 'GET') {
+    return uncachedRequest(path, { locale, ...fetchOptions }, host)
+  }
+
+  const key = cacheKey(host, path, locale)
+  const now = Date.now()
+
+  const mem = memoryCache.get(key)
+  if (mem && mem.expires > now) {
+    return cloneJson(mem.data)
+  }
+
+  const sessionHit = readSessionCache(key)
+  if (sessionHit !== null) {
+    memoryCache.set(key, { data: cloneJson(sessionHit), expires: now + CMS_CACHE_TTL_MS })
+    return cloneJson(sessionHit)
+  }
+
+  const existing = inflight.get(key)
+  if (existing) {
+    return cloneJson(await existing)
+  }
+
+  const p = uncachedRequest(path, { locale, ...fetchOptions }, host)
+    .then((data) => {
+      const exp = Date.now() + CMS_CACHE_TTL_MS
+      const copy = cloneJson(data)
+      memoryCache.set(key, { data: copy, expires: exp })
+      writeSessionCache(key, copy, exp)
+      return copy
+    })
+    .finally(() => {
+      inflight.delete(key)
+    })
+
+  inflight.set(key, p)
+  return await p
+}
+
+async function uncachedRequest(path, options, host) {
+  const { locale, ...fetchOptions } = options
 
   /** @type {{ root: string, headers: Record<string, string> }[]} */
   const attempts = []
@@ -60,7 +175,7 @@ async function request(path, options = {}) {
     })
   }
 
-  for (let i = 0; i < attempts.length; i++) {
+  for (let i = 0; i < attempts.length; i += 1) {
     const { root, headers } = attempts[i]
     const url = `${CMS_API_BASE}${root}${withLocaleQuery(path, locale)}`
     const res = await fetch(url, { ...fetchOptions, headers })

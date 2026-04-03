@@ -101,11 +101,11 @@ function HomePage() {
     document.documentElement.lang = lang
   }, [lang])
 
-  /* Fetch blogs for home + compress settings (same slot as removed “Other tools”). */
+  /* Home landing: fetch CMS home HTML + blog teasers in parallel (one network wait). Compress page: blogs only. */
   useEffect(() => {
-    if (!isHomeLanding && !isCompressPage) return
+    if (!isHomeLanding && !isCompressPage) return undefined
     let cancelled = false
-    getBlogs(lang)
+    const blogPromise = getBlogs(lang)
       .then((res) => {
         if (cancelled) return
         setTeaserBlogs(Array.isArray(res.blogs) ? res.blogs : [])
@@ -113,13 +113,12 @@ function HomePage() {
       .catch(() => {
         if (!cancelled) setTeaserBlogs([])
       })
-    return () => { cancelled = true }
-  }, [isHomeLanding, isCompressPage, lang])
-
-  useEffect(() => {
-    if (!isHomeLanding) return undefined
-    let cancelled = false
-    getHomePageContent(lang)
+    if (!isHomeLanding) {
+      return () => {
+        cancelled = true
+      }
+    }
+    const homePromise = getHomePageContent(lang)
       .then((res) => {
         if (cancelled) return
         setCmsHomeHtml(typeof res?.content === 'string' ? res.content : '')
@@ -127,10 +126,11 @@ function HomePage() {
       .catch(() => {
         if (!cancelled) setCmsHomeHtml('')
       })
+    void Promise.all([blogPromise, homePromise])
     return () => {
       cancelled = true
     }
-  }, [isHomeLanding, lang])
+  }, [isHomeLanding, isCompressPage, lang])
 
   /* Fetch FAQ and cards when below-the-fold is shown */
   useEffect(() => {

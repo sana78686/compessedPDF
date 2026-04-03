@@ -37,7 +37,6 @@ export default function DynamicSeoHead() {
   const [seoData, setSeoData] = useState(DEFAULT_SEO)
   const [headSnippet, setHeadSnippet] = useState('')
   const [gaMeasurementId, setGaMeasurementId] = useState(envGaFallback)
-  const [loading, setLoading] = useState(true)
   const location = useLocation()
 
   useEffect(() => {
@@ -65,8 +64,6 @@ export default function DynamicSeoHead() {
         setGaMeasurementId(cmsGa || envGaFallback)
       } catch (error) {
         console.warn('Failed to load SEO data from CMS, using defaults:', error)
-      } finally {
-        if (isMounted) setLoading(false)
       }
     }
 
@@ -74,17 +71,36 @@ export default function DynamicSeoHead() {
     return () => { isMounted = false }
   }, [location.pathname])
 
+  // Defer third-party / CMS head scripts until idle so Lighthouse TBT and main-thread work improve.
   useEffect(() => {
-    const fromSnippet = injectHeadSnippet(headSnippet)
-    const skipGa = headSnippetReferencesGaId(headSnippet, gaMeasurementId)
-    const fromGa = gaMeasurementId && !skipGa ? injectGa4(gaMeasurementId) : []
+    let cancelled = false
+    const injected = []
+    const run = () => {
+      if (cancelled) return
+      injected.push(...injectHeadSnippet(headSnippet))
+      const skipGa = headSnippetReferencesGaId(headSnippet, gaMeasurementId)
+      if (gaMeasurementId && !skipGa) {
+        injected.push(...injectGa4(gaMeasurementId))
+      }
+    }
+    let idleId
+    let timeoutId
+    if (typeof requestIdleCallback !== 'undefined') {
+      idleId = requestIdleCallback(run, { timeout: 2500 })
+    } else {
+      timeoutId = window.setTimeout(run, 1)
+    }
     return () => {
-      fromSnippet.forEach((n) => n.remove())
-      fromGa.forEach((n) => n.remove())
+      cancelled = true
+      if (idleId !== undefined && typeof cancelIdleCallback !== 'undefined') {
+        cancelIdleCallback(idleId)
+      }
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId)
+      }
+      injected.forEach((n) => n.remove())
     }
   }, [headSnippet, gaMeasurementId])
-
-  if (loading) return null
 
   return (
     <SeoHead
