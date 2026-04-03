@@ -132,6 +132,9 @@ async function request(path, options = {}) {
 
   const p = uncachedRequest(path, { locale, ...fetchOptions }, host)
     .then((data) => {
+      if (data != null && typeof data === 'object' && data._seo_redirect) {
+        return cloneJson(data)
+      }
       const exp = Date.now() + CMS_CACHE_TTL_MS
       const copy = cloneJson(data)
       memoryCache.set(key, { data: copy, expires: exp })
@@ -295,4 +298,13 @@ export function getLegalPage(slug, locale) {
 /** @param {string} [locale] @returns {Promise<{ legal: Record<string, boolean> }>} */
 export function getLegalNav(locale) {
   return request('/legal-nav', { locale })
+}
+
+/**
+ * Locales that have at least one visible CMS page or published blog (for scoping the public language switcher).
+ * @param {string} [locale] - optional; included for cache key consistency
+ * @returns {Promise<{ locales: string[] }>}
+ */
+export function getContentLocales(locale) {
+  return request('/content-locales', { locale })
 }

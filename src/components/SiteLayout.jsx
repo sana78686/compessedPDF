@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { supportedLangs, langOptions, defaultLang, writeUserLocalePreference } from '../i18n/translations'
 import { langShortLabel } from '../i18n/langMeta'
-import { getPages, getLegalNav, getFaq } from '../api/cms'
+import { getPages, getLegalNav, getFaq, getContentLocales } from '../api/cms'
 import BrandLogo from './BrandLogo'
 import { COMPRESS_PDF_EN } from '../constants/brand'
 import LangFlag from './LangFlag'
@@ -54,8 +54,34 @@ export default function SiteLayout({ children }) {
   const [footerPages, setFooterPages] = useState([])
   const [legalVisibility, setLegalVisibility] = useState({})
   const [showFaqLink, setShowFaqLink] = useState(false)
+  /** Locales that have CMS page/blog content; null = show full supportedLangs list */
+  const [publicContentLocales, setPublicContentLocales] = useState(null)
 
   const locale = supportedLangs.includes(lang) ? lang : defaultLang
+  const langChoices = publicContentLocales ?? supportedLangs
+
+  useEffect(() => {
+    let cancelled = false
+    getContentLocales(locale)
+      .then((res) => {
+        if (cancelled) return
+        const raw = res?.locales
+        if (!Array.isArray(raw) || raw.length === 0) {
+          setPublicContentLocales(null)
+          return
+        }
+        const merged = new Set(raw)
+        merged.add(defaultLang)
+        const filtered = supportedLangs.filter((l) => merged.has(l))
+        setPublicContentLocales(filtered.length > 0 ? filtered : null)
+      })
+      .catch(() => {
+        if (!cancelled) setPublicContentLocales(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [locale])
 
   useEffect(() => {
     let cancelled = false
@@ -117,7 +143,7 @@ export default function SiteLayout({ children }) {
               </button>
               {langDropdownOpen && (
                 <ul className="lang-dropdown-menu" role="listbox">
-                  {supportedLangs.map((l) => (
+                  {langChoices.map((l) => (
                     <li key={l} role="option" aria-selected={lang === l}>
                       <a
                         href={pathname.replace(new RegExp(`^/${lang}(/|$)`), `/${l}$1`)}

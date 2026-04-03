@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getBlogBySlug } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
 import { useTranslation } from '../i18n/useTranslation'
 import { getPreferredLang, supportedLangs } from '../i18n/translations'
+import { buildHreflangAlternates } from '../utils/seoHreflang'
 import './CmsPage.css'
 
 function formatDate(iso) {
@@ -32,6 +33,7 @@ function formatShortDate(iso) {
 
 export default function CmsBlog() {
   const { lang, slug } = useParams()
+  const navigate = useNavigate()
   const t = useTranslation(lang)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -47,12 +49,36 @@ export default function CmsBlog() {
       .finally(() => setLoading(false))
   }, [slug, lang])
 
+  useEffect(() => {
+    const redir = data?._seo_redirect
+    if (!redir?.locale || !redir?.slug) return
+    navigate(`/${redir.locale}/blog/${encodeURIComponent(redir.slug)}`, { replace: true })
+  }, [data, navigate])
+
+  const alternateLocalesKey = Array.isArray(data?.alternate_locales)
+    ? [...data.alternate_locales].sort().join(',')
+    : ''
+  const hreflangAlternates = useMemo(() => {
+    if (!data || data._seo_redirect || error) return null
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const alt = buildHreflangAlternates(data.slug || slug, data.alternate_locales, 'blog', origin)
+    return alt.length ? alt : null
+  }, [data, error, slug, alternateLocalesKey])
+
   const langPrefix = supportedLangs.includes(lang) ? lang : getPreferredLang()
 
   if (loading) {
     return (
       <div className="cms-page wrap">
         <p className="cms-page-loading">Loading…</p>
+      </div>
+    )
+  }
+
+  if (data?._seo_redirect) {
+    return (
+      <div className="cms-page wrap">
+        <p className="cms-page-loading">Redirecting…</p>
       </div>
     )
   }
@@ -81,6 +107,7 @@ export default function CmsBlog() {
         ogDescription={data.og_description}
         ogImage={heroImage}
         ogType="article"
+        hreflangAlternates={hreflangAlternates}
       />
       <header className="cms-blog-header">
         <h1 className="cms-blog-title">{data.title}</h1>

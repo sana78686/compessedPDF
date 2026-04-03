@@ -15,7 +15,7 @@ const SITE_NAME = COMPRESS_PDF_EN
  *  - The last SeoHead to mount wins for any given tag.
  *  - Use ogType="article" for blog/article posts, "website" for pages.
  *
- * @param {{ title, description, keywords, canonical, robots, ogTitle, ogDescription, ogImage, ogType }} props
+ * @param {{ title, description, keywords, canonical, robots, ogTitle, ogDescription, ogImage, ogType, hreflangAlternates?: { hreflang: string, href: string }[] }} props
  */
 export function SeoHead({
   title = '',
@@ -27,6 +27,7 @@ export function SeoHead({
   ogDescription,
   ogImage,
   ogType = 'website',
+  hreflangAlternates = null,
 }) {
   const siteTitle    = title ? `${title} | ${SITE_NAME}` : SITE_NAME
   const ogTitleFinal = ogTitle ?? title
@@ -35,6 +36,7 @@ export function SeoHead({
   // Track only the elements WE created so cleanup is surgical, not global.
   const ownedEls       = useRef([])
   const ownedCanonical = useRef(false)
+  const ownedHreflangs = useRef([])
 
   useEffect(() => {
     document.title = siteTitle
@@ -111,6 +113,27 @@ export function SeoHead({
       }
     }
   }, [siteTitle, description, keywords, robots, canonical, ogTitleFinal, ogDescFinal, ogImage, ogType])
+
+  useEffect(() => {
+    ownedHreflangs.current.forEach((el) => el?.parentNode?.removeChild(el))
+    ownedHreflangs.current = []
+    if (!hreflangAlternates?.length || typeof document === 'undefined') return
+    const created = []
+    for (const { hreflang, href } of hreflangAlternates) {
+      if (!hreflang || !href) continue
+      const link = document.createElement('link')
+      link.setAttribute('rel', 'alternate')
+      link.setAttribute('hreflang', hreflang)
+      link.setAttribute('href', href)
+      document.head.appendChild(link)
+      created.push(link)
+    }
+    ownedHreflangs.current = created
+    return () => {
+      ownedHreflangs.current.forEach((el) => el?.parentNode?.removeChild(el))
+      ownedHreflangs.current = []
+    }
+  }, [hreflangAlternates])
 
   return null
 }
