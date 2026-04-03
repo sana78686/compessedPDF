@@ -179,6 +179,8 @@ export default {
     title: 'Kontak',
     description: 'Hubungi kami — formulir dan detail kontak.',
     intro: 'Hubungi kami untuk melaporkan masalah, pertanyaan tentang compressedPDF, atau informasi lebih lanjut.',
+    detailsHeading: 'Detail kontak',
+    sendAnother: 'Kirim pesan lain',
     email: 'Email',
     emailNote: 'Pesan formulir dari situs dikirim ke email ini.',
     phone: 'Telepon',

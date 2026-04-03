@@ -9,7 +9,8 @@ lerna-debug.log*
 
 node_modules
 compressedPDF-cms
-app.apimstec.com
+# Laravel CMS: separate git repo — do not commit here
+app.apimstec.com/
 dist
 dist-ssr
 *.local

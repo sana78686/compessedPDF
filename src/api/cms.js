@@ -126,20 +126,25 @@ export function getBlogBySlug(slug, locale) {
   return request(`/blogs/${encodeURIComponent(slug)}`, { locale })
 }
 
-/** @returns {Promise<{ contact_email?: string, contact_phone?: string, contact_address?: string }>} */
-export function getContactSettings() {
-  return request('/contact')
+/**
+ * @param {string} [locale]
+ * @returns {Promise<{ contact_email?: string, contact_phone?: string, contact_address?: string }>}
+ */
+export function getContactSettings(locale) {
+  return request('/contact', { locale })
 }
 
 /**
  * Submit contact form. Email is sent to the address set in CMS Content Manager.
  * @param {{ name: string, email: string, subject: string, message: string, accepts_terms: boolean }} data
+ * @param {string} [locale]
  */
-export function submitContactForm(data) {
+export function submitContactForm(data, locale) {
   return request('/contact/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
+    locale,
   })
 }
 

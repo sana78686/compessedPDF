@@ -183,6 +183,8 @@ export const translations = {
       title: 'Contact',
       description: 'Get in touch – contact form and details.',
       intro: 'Contact us to report a problem, clarify any doubts about compressedPDF, or just find out more.',
+      detailsHeading: 'Contact details',
+      sendAnother: 'Send another message',
       email: 'Email',
       emailNote: 'Contact form requests from the website are sent to this email.',
       phone: 'Phone',

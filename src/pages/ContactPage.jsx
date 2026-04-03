@@ -15,6 +15,8 @@ export default function ContactPage() {
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  /** Snapshot of last successful submit (form is cleared after send). */
+  const [sentSummary, setSentSummary] = useState(null)
   const [formError, setFormError] = useState('')
   const [form, setForm] = useState({
     name: '',
@@ -29,11 +31,13 @@ export default function ContactPage() {
   }, [lang])
 
   useEffect(() => {
-    getContactSettings()
+    setLoading(true)
+    setError(null)
+    getContactSettings(langPrefix)
       .then(setSettings)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [])
+  }, [langPrefix])
 
   const subjectOptions = [
     { value: '', label: t('contact.chooseSubject') },
@@ -42,6 +46,19 @@ export default function ContactPage() {
     { value: 'feedback', label: t('contact.subjectFeedback') },
     { value: 'other', label: t('contact.subjectOther') },
   ]
+
+  function subjectLabelFor(value) {
+    const opt = subjectOptions.find((o) => o.value === value)
+    return opt?.label || value || t('contact.subjectGeneral')
+  }
+
+  function contactDetailsVisible(s) {
+    if (!s || typeof s !== 'object') return false
+    const e = String(s.contact_email ?? '').trim()
+    const p = String(s.contact_phone ?? '').trim()
+    const a = String(s.contact_address ?? '').trim()
+    return Boolean(e || p || a)
+  }
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target
@@ -58,13 +75,22 @@ export default function ContactPage() {
     setFormError('')
     setSubmitting(true)
     try {
-      await submitContactForm({
-        name: form.name.trim(),
-        email: form.email.trim(),
-        subject: form.subject || t('contact.subjectGeneral'),
-        message: form.message.trim(),
-        accepts_terms: true,
-      })
+      const name = form.name.trim()
+      const email = form.email.trim()
+      const subjectVal = form.subject || 'general'
+      const subjectText = subjectLabelFor(subjectVal)
+      const message = form.message.trim()
+      await submitContactForm(
+        {
+          name,
+          email,
+          subject: subjectText,
+          message,
+          accepts_terms: true,
+        },
+        langPrefix
+      )
+      setSentSummary({ name, email, subject: subjectText, message })
       setSubmitSuccess(true)
       setForm({ name: '', email: '', subject: '', message: '', accepts_terms: false })
     } catch (err) {
@@ -100,17 +126,79 @@ export default function ContactPage() {
         <div className="contact-page-intro">
           <h1 className="contact-page-title">{t('contact.title')}</h1>
           <p className="contact-page-intro-text">{t('contact.intro')}</p>
+          <div className="contact-page-details" aria-label={t('contact.detailsHeading')}>
+            {contactDetailsVisible(settings) ? (
+              <ul className="contact-details-list">
+                {String(settings.contact_email ?? '').trim() !== '' && (
+                  <li className="contact-details-item">
+                    <span className="contact-details-label">{t('contact.email')}</span>
+                    <a
+                      className="contact-details-value contact-details-link"
+                      href={`mailto:${String(settings.contact_email).trim()}`}
+                    >
+                      {String(settings.contact_email).trim()}
+                    </a>
+                    <p className="contact-details-note">{t('contact.emailNote')}</p>
+                  </li>
+                )}
+                {String(settings.contact_phone ?? '').trim() !== '' && (
+                  <li className="contact-details-item">
+                    <span className="contact-details-label">{t('contact.phone')}</span>
+                    <a
+                      className="contact-details-value contact-details-link"
+                      href={`tel:${String(settings.contact_phone).replace(/\s+/g, '')}`}
+                    >
+                      {String(settings.contact_phone).trim()}
+                    </a>
+                  </li>
+                )}
+                {String(settings.contact_address ?? '').trim() !== '' && (
+                  <li className="contact-details-item">
+                    <span className="contact-details-label">{t('contact.address')}</span>
+                    <span className="contact-details-value contact-details-multiline">
+                      {String(settings.contact_address).trim()}
+                    </span>
+                  </li>
+                )}
+              </ul>
+            ) : (
+              <p className="contact-page-no-details">{t('contact.noDetails')}</p>
+            )}
+          </div>
         </div>
         <div className="contact-page-form-wrap">
           {submitSuccess ? (
             <div className="contact-form-success" role="status">
               <p className="contact-form-success-text">{t('contact.successMessage')}</p>
+              {sentSummary && (
+                <dl className="contact-form-sent-summary">
+                  <div className="contact-form-sent-row">
+                    <dt>{t('contact.yourName')}</dt>
+                    <dd>{sentSummary.name}</dd>
+                  </div>
+                  <div className="contact-form-sent-row">
+                    <dt>{t('contact.yourEmail')}</dt>
+                    <dd>{sentSummary.email}</dd>
+                  </div>
+                  <div className="contact-form-sent-row">
+                    <dt>{t('contact.subject')}</dt>
+                    <dd>{sentSummary.subject}</dd>
+                  </div>
+                  <div className="contact-form-sent-row">
+                    <dt>{t('contact.message')}</dt>
+                    <dd className="contact-form-sent-message">{sentSummary.message}</dd>
+                  </div>
+                </dl>
+              )}
               <button
                 type="button"
                 className="contact-form-success-again"
-                onClick={() => setSubmitSuccess(false)}
+                onClick={() => {
+                  setSubmitSuccess(false)
+                  setSentSummary(null)
+                }}
               >
-                Send another message
+                {t('contact.sendAnother')}
               </button>
             </div>
           ) : (
