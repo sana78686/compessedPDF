@@ -186,7 +186,6 @@ export const translations = {
       detailsHeading: 'Contact details',
       sendAnother: 'Send another message',
       email: 'Email',
-      emailNote: 'Contact form requests from the website are sent to this email.',
       phone: 'Phone',
       address: 'Address',
       backHome: 'Back to home',

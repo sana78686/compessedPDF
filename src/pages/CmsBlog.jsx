@@ -39,6 +39,11 @@ export default function CmsBlog() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [heroBroken, setHeroBroken] = useState(false)
+
+  useEffect(() => {
+    setHeroBroken(false)
+  }, [slug, lang])
 
   useEffect(() => {
     if (!slug) return
@@ -94,7 +99,7 @@ export default function CmsBlog() {
     )
   }
 
-  const heroImage = resolveCmsMediaUrl(data.og_image || data.image)
+  const heroResolved = resolveCmsMediaUrl(data.og_image || data.image)
   const authorName = data.author?.name
 
   return (
@@ -106,7 +111,7 @@ export default function CmsBlog() {
         robots={data.meta_robots}
         ogTitle={data.og_title}
         ogDescription={data.og_description}
-        ogImage={heroImage}
+        ogImage={heroResolved}
         ogType="article"
         hreflangAlternates={hreflangAlternates}
       />
@@ -144,12 +149,19 @@ export default function CmsBlog() {
             </dd>
           </div>
         </dl>
-        {heroImage && (
+        {heroResolved && !heroBroken ? (
           <div className="cms-blog-hero">
-            <img src={heroImage} alt={data.title ? `Featured image for ${data.title}` : 'Blog featured image'} className="cms-blog-hero-img" loading="eager" decoding="async" />
+            <img
+              src={heroResolved}
+              alt={data.title ? `Featured image for ${data.title}` : 'Blog featured image'}
+              className="cms-blog-hero-img"
+              loading="eager"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onError={() => setHeroBroken(true)}
+            />
           </div>
-        )}
-        {!heroImage && (
+        ) : (
           <div className="cms-blog-hero cms-blog-hero-placeholder" aria-hidden="true">
             <span className="cms-blog-hero-placeholder-text">Featured image</span>
           </div>

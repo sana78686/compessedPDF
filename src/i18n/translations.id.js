@@ -182,7 +182,6 @@ export default {
     detailsHeading: 'Detail kontak',
     sendAnother: 'Kirim pesan lain',
     email: 'Email',
-    emailNote: 'Pesan formulir dari situs dikirim ke email ini.',
     phone: 'Telepon',
     address: 'Alamat',
     backHome: 'Kembali ke beranda',

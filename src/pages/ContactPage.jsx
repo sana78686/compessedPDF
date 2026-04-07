@@ -138,7 +138,6 @@ export default function ContactPage() {
                     >
                       {String(settings.contact_email).trim()}
                     </a>
-                    <p className="contact-details-note">{t('contact.emailNote')}</p>
                   </li>
                 )}
                 {String(settings.contact_phone ?? '').trim() !== '' && (

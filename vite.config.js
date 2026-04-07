@@ -10,6 +10,36 @@ function normalizeSiteDomain(value) {
     .split('/')[0]
 }
 
+function encodePathSegments(rel) {
+  return String(rel || '')
+    .replace(/^\/+/, '')
+    .split('/')
+    .filter(Boolean)
+    .map((p) => encodeURIComponent(p))
+    .join('/')
+}
+
+/** Meta URLs in static HTML: site images use the public frontend origin (/uploads → proxied to CMS). */
+function absoluteUrlForBuild(href, apiOrigin, siteOrigin) {
+  const s = String(href ?? '').trim()
+  if (!s) return ''
+  if (/^https?:\/\//i.test(s)) return s
+  if (s.startsWith('//')) return `https:${s}`
+  const api = String(apiOrigin).replace(/\/$/, '')
+  const site = String(siteOrigin).replace(/\/$/, '')
+  if (s.startsWith('/storage/')) {
+    const tail = s.replace(/^\/storage\//, '')
+    return `${site}/${encodePathSegments(tail)}`
+  }
+  if (s.startsWith('/media/')) {
+    return `${api}${s}`
+  }
+  if (s.startsWith('/')) {
+    return `${site}${s}`
+  }
+  return s
+}
+
 /** Inject modulepreload for entry script so browser starts loading it earlier (LCP) */
 function modulepreloadPlugin() {
   return {
@@ -55,17 +85,18 @@ function cmsSeoInjectPlugin(viteEnv) {
           // In build: fetch once and reuse (buildCache).
           let data = isDevServer ? null : buildCache
 
+          const apiBase = (
+            viteEnv.VITE_API_URL ||
+            (isDevServer ? 'http://localhost:3000' : 'https://app.apimstec.com')
+          ).replace(/\/$/, '')
+          const siteDomain = normalizeSiteDomain(
+            viteEnv.VITE_SITE_DOMAIN || (isDevServer ? 'compresspdf.local' : 'compresspdf.id'),
+          )
+
           if (!data) {
-            const apiBase = (
-              viteEnv.VITE_API_URL ||
-              (isDevServer ? 'http://localhost:3000' : 'https://app.apimstec.com')
-            ).replace(/\/$/, '')
-            const siteDomain = normalizeSiteDomain(
-              viteEnv.VITE_SITE_DOMAIN || (isDevServer ? 'compresspdf.local' : 'compresspdf.id'),
-            )
             const useDomainPath = viteEnv.VITE_API_DOMAIN_PATH !== 'false'
-            // Baked into index.html for crawlers without JS. Must match the locale you optimize for (often `en` for English-first sites).
-            const buildSeoLocale = String(viteEnv.VITE_BUILD_SEO_LOCALE || 'id').trim().toLowerCase() || 'id'
+            // Baked into index.html for crawlers without JS. Set VITE_BUILD_SEO_LOCALE to match the CMS home content you want in the initial HTML (e.g. en, id).
+            const buildSeoLocale = String(viteEnv.VITE_BUILD_SEO_LOCALE || 'en').trim().toLowerCase() || 'en'
             const homeQuery = `?locale=${encodeURIComponent(buildSeoLocale)}`
             const tryUrls = useDomainPath
               ? [
@@ -92,6 +123,16 @@ function cmsSeoInjectPlugin(viteEnv) {
             if (!isDevServer) buildCache = data  // cache only for build pass
           }
 
+          let apiOrigin = 'https://app.apimstec.com'
+          try {
+            apiOrigin = new URL(apiBase).origin
+          } catch {
+            /* keep default */
+          }
+          const siteOrigin = siteDomain.includes('localhost') || siteDomain === '127.0.0.1'
+            ? `http://${siteDomain}`
+            : `https://${siteDomain}`
+
           const esc = (s) =>
             String(s ?? '')
               .replace(/&/g, '&amp;')
@@ -105,9 +146,11 @@ function cmsSeoInjectPlugin(viteEnv) {
           const keywords  = data.meta_keywords    || ''
           const ogTitle   = data.og_title         || rawTitle
           const ogDesc    = data.og_description   || desc
-          const ogImage   = data.og_image         || DEFAULT_OG_IMAGE
+          const ogImageRaw = (data.og_image && String(data.og_image).trim()) || DEFAULT_OG_IMAGE
+          const ogImage = absoluteUrlForBuild(ogImageRaw, apiOrigin, siteOrigin)
           const robots    = data.meta_robots      || 'index,follow'
-          const canonical = data.canonical_url    || ''
+          const canonicalRaw = data.canonical_url ? String(data.canonical_url).trim() : ''
+          const canonical = canonicalRaw ? absoluteUrlForBuild(canonicalRaw, apiOrigin, siteOrigin) : ''
           const headSnippet = String(data.head_snippet || '').trim()
           const gaIdRaw = String(data.ga_measurement_id || viteEnv.VITE_GA_MEASUREMENT_ID || '').trim()
           const gaIdOk = /^G-[A-Z0-9]+$/i.test(gaIdRaw)
@@ -154,15 +197,158 @@ function cmsSeoInjectPlugin(viteEnv) {
   }
 }
 
+/**
+ * After production build, download sitemap.xml + robots.txt from CMS (per-domain routes)
+ * into dist/ so the static host can serve them at the site root (same domain as the React app).
+ */
+function fetchSeoStaticPlugin(viteEnv) {
+  return {
+    name: 'fetch-seo-static',
+    apply: 'build',
+    async closeBundle() {
+      if (String(viteEnv.VITE_FETCH_SEO_FILES || 'true').toLowerCase() === 'false') {
+        return
+      }
+      const fs = await import('node:fs')
+      const path = await import('node:path')
+      const distDir = path.resolve(process.cwd(), 'dist')
+      if (!fs.existsSync(distDir)) {
+        return
+      }
+      const apiBase = (viteEnv.VITE_API_URL || 'https://app.apimstec.com').replace(/\/$/, '')
+      const siteDomain = normalizeSiteDomain(viteEnv.VITE_SITE_DOMAIN || 'compresspdf.id')
+      const files = [
+        [`${apiBase}/${siteDomain}/sitemap.xml`, 'sitemap.xml'],
+        [`${apiBase}/${siteDomain}/robots.txt`, 'robots.txt'],
+      ]
+      for (const [url, name] of files) {
+        try {
+          const res = await fetch(url, { headers: { Accept: '*/*' } })
+          if (!res.ok) {
+            console.warn(`[fetch-seo-static] ${name}: HTTP ${res.status} (${url})`)
+            continue
+          }
+          fs.writeFileSync(path.join(distDir, name), Buffer.from(await res.arrayBuffer()))
+          console.log(`[fetch-seo-static] Wrote dist/${name} from CMS ✓`)
+        } catch (e) {
+          console.warn(`[fetch-seo-static] ${name}: ${e?.message || e}`)
+        }
+      }
+    },
+  }
+}
+
+/**
+ * Bake public CMS JSON into dist/cms-prefetch.json (per locale). At runtime, prepareCmsClient()
+ * loads it when its revision matches GET /content-revision so first paint avoids many API calls.
+ */
+function cmsPrefetchPlugin(viteEnv) {
+  return {
+    name: 'cms-prefetch',
+    apply: 'build',
+    async closeBundle() {
+      if (String(viteEnv.VITE_CMS_PREFETCH ?? 'true').toLowerCase() === 'false') {
+        return
+      }
+      const fs = await import('node:fs')
+      const path = await import('node:path')
+      const distDir = path.resolve(process.cwd(), 'dist')
+      if (!fs.existsSync(distDir)) {
+        return
+      }
+      const apiBase = (viteEnv.VITE_API_URL || 'https://app.apimstec.com').replace(/\/$/, '')
+      const siteDomain = normalizeSiteDomain(viteEnv.VITE_SITE_DOMAIN || 'compresspdf.id')
+      const useDomainPath = viteEnv.VITE_API_DOMAIN_PATH !== 'false'
+
+      function withLocale(p, locale) {
+        if (!locale) return p
+        const joiner = p.includes('?') ? '&' : '?'
+        return `${p}${joiner}locale=${encodeURIComponent(locale)}`
+      }
+
+      async function fetchPublicJson(apiPath, locale) {
+        const rel = withLocale(apiPath, locale)
+        const tryUrls = useDomainPath
+          ? [
+              { url: `${apiBase}/${siteDomain}/api/public${rel}`, headers: { Accept: 'application/json' } },
+              { url: `${apiBase}/api/public${rel}`, headers: { Accept: 'application/json', 'X-Domain': siteDomain } },
+            ]
+          : [{ url: `${apiBase}/api/public${rel}`, headers: { Accept: 'application/json', 'X-Domain': siteDomain } }]
+        for (let u = 0; u < tryUrls.length; u++) {
+          const { url, headers } = tryUrls[u]
+          const res = await fetch(url, { headers })
+          if (res.ok) {
+            return res.json()
+          }
+          const retry =
+            useDomainPath &&
+            u === 0 &&
+            tryUrls.length > 1 &&
+            (res.status === 404 || res.status === 403)
+          if (retry) {
+            continue
+          }
+          const data = await res.json().catch(() => ({}))
+          throw new Error(data.message || `HTTP ${res.status}`)
+        }
+        throw new Error('Public API request failed')
+      }
+
+      let revision = 0
+      try {
+        const revDoc = await fetchPublicJson('/content-revision', '')
+        revision = Number(revDoc?.revision ?? 0)
+      } catch (e) {
+        console.warn(`[cms-prefetch] content-revision: ${e?.message || e} — skipping cms-prefetch.json`)
+        return
+      }
+
+      const localesStr = String(viteEnv.VITE_CMS_PREFETCH_LOCALES || 'en,id').trim()
+      const locales = localesStr.split(/[\s,]+/).filter(Boolean)
+      const paths = ['/home-content', '/faq', '/pages', '/blogs', '/home-cards', '/legal-nav', '/contact']
+      const bundle = { revision, locales: {} }
+
+      for (const locale of locales) {
+        bundle.locales[locale] = {}
+        for (const p of paths) {
+          try {
+            bundle.locales[locale][p] = await fetchPublicJson(p, locale)
+          } catch (e) {
+            console.warn(`[cms-prefetch] ${p} (${locale}): ${e?.message || e}`)
+          }
+        }
+      }
+
+      fs.writeFileSync(path.join(distDir, 'cms-prefetch.json'), JSON.stringify(bundle))
+      console.log('[cms-prefetch] Wrote dist/cms-prefetch.json ✓')
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const viteEnv = loadEnv(mode, process.cwd(), '')
+  const cmsDev = (viteEnv.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '')
   return {
-    plugins: [react(), cmsSeoInjectPlugin(viteEnv), modulepreloadPlugin()],
+    plugins: [
+      react(),
+      cmsSeoInjectPlugin(viteEnv),
+      modulepreloadPlugin(),
+      fetchSeoStaticPlugin(viteEnv),
+      cmsPrefetchPlugin(viteEnv),
+    ],
     server: {
       host: '127.0.0.1',
       port: 2000,
       strictPort: true,
+      proxy: {
+        // Local dev: /uploads/... on the React port → Laravel /storage/... (matches production nginx)
+        '/uploads': {
+          target: cmsDev,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/uploads/, '/storage'),
+        },
+      },
     },
     build: {
       rollupOptions: {

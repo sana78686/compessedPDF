@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useParams, Outlet } from 'react-router-dom'
 import SiteLayout from './components/SiteLayout'
 import HomePage from './pages/HomePage'
 import DynamicSeoHead from './components/DynamicSeoHead'
+import HreflangLinks from './components/HreflangLinks'
 import { supportedLangs, getPreferredLang } from './i18n/translations'
 import GeoLangRedirect from './components/GeoLangRedirect'
 
@@ -45,6 +46,7 @@ function App() {
   return (
     <>
       <DynamicSeoHead />
+      <HreflangLinks />
       <Routes>
         <Route path="/" element={<GeoLangRedirect />} />
         <Route element={<LangGuard><SiteLayoutWrapper /></LangGuard>}>

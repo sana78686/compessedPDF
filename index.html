@@ -12,11 +12,9 @@
     <link rel="preconnect" href="https://flagcdn.com" crossorigin />
     <link rel="dns-prefetch" href="https://flagcdn.com" />
     <meta name="theme-color" content="#ffffff" />
-    <!-- Meta title/description/OG and CMS &lt;head&gt; snippet are not duplicated here as React
-         components: see src/components/SeoHead.jsx (injects meta at runtime) and
-         src/components/DynamicSeoHead.jsx (home + compress routes: CMS SEO + head snippet + GA4).
-         Configure in CMS: Content manager → Home (head snippet), SEO → Analytics (GA4).
-         Optional dev fallback: VITE_GA_MEASUREMENT_ID in .env -->
+    <!-- SEO note: One HTML file for all routes (normal for React). “View source” = this file only;
+         Google still reads meta after JS. Per-page + per-language meta and hreflang are set in JS
+         (SeoHead, HreflangLinks). Home meta is also filled at build (VITE_BUILD_SEO_LOCALE). -->
     <!-- Static fallbacks — overwritten at build time by cms-seo-inject plugin from CMS API,
          and again at runtime by React SeoHead from CMS API for regular users. -->
     <meta name="robots" content="index, follow" />

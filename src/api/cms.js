@@ -18,6 +18,7 @@ const CMS_SESSION_CACHE =
   String(import.meta.env.VITE_CMS_SESSION_CACHE ?? 'true').toLowerCase() !== 'false'
 
 const STORAGE_PREFIX = 'cms:v1:'
+const REVISION_STORAGE_KEY = 'cms:content-revision:v1'
 
 /** @type {Map<string, { expires: number, data: unknown }>} */
 const memoryCache = new Map()
@@ -149,8 +150,124 @@ async function request(path, options = {}) {
   return await p
 }
 
+/**
+ * GET only — skips in-app cache (used for content-revision + build-time fetches).
+ * @param {string} path
+ * @param {string | undefined} locale
+ * @param {string} host
+ */
+async function fetchPublicJsonUncached(path, locale, host) {
+  /** @type {{ root: string, headers: Record<string, string> }[]} */
+  const attempts = []
+  if (useDomainInApiPath) {
+    attempts.push({
+      root: `/${host}/api/public`,
+      headers: { Accept: 'application/json' },
+    })
+    attempts.push({
+      root: '/api/public',
+      headers: { Accept: 'application/json', 'X-Domain': host },
+    })
+  } else {
+    attempts.push({
+      root: '/api/public',
+      headers: { Accept: 'application/json', 'X-Domain': host },
+    })
+  }
+
+  for (let i = 0; i < attempts.length; i += 1) {
+    const { root, headers } = attempts[i]
+    const url = `${CMS_API_BASE}${root}${withLocaleQuery(path, locale)}`
+    const res = await fetch(url, { headers })
+    if (res.ok) {
+      return res.json()
+    }
+    const retry =
+      useDomainInApiPath &&
+      i === 0 &&
+      attempts.length > 1 &&
+      (res.status === 404 || res.status === 403)
+    if (retry) {
+      continue
+    }
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || `HTTP ${res.status}`)
+  }
+  throw new Error('Public API request failed')
+}
+
+function primeCmsPrefetchBundle(bundle) {
+  const host = resolveSiteDomainForApi()
+  const exp = Date.now() + CMS_CACHE_TTL_MS
+  const locales = bundle.locales
+  if (!locales || typeof locales !== 'object') return
+  for (const locale of Object.keys(locales)) {
+    const entries = locales[locale]
+    if (!entries || typeof entries !== 'object') continue
+    for (const apiPath of Object.keys(entries)) {
+      if (!apiPath.startsWith('/')) continue
+      const key = cacheKey(host, apiPath, locale)
+      const copy = cloneJson(entries[apiPath])
+      memoryCache.set(key, { data: copy, expires: exp })
+      writeSessionCache(key, copy, exp)
+    }
+  }
+}
+
+/**
+ * Before first paint: compare CMS content-revision to last visit; if newer, drop caches.
+ * If `dist/cms-prefetch.json` exists and its revision matches, hydrate memory/session cache (no API round-trips).
+ */
+export async function prepareCmsClient() {
+  if (typeof window === 'undefined') return
+  try {
+    const host = resolveSiteDomainForApi()
+    const remote = await fetchPublicJsonUncached('/content-revision', undefined, host)
+    const rev = Number(remote?.revision ?? 0)
+    let stored = 0
+    try {
+      stored = Number.parseInt(window.localStorage.getItem(REVISION_STORAGE_KEY) || '0', 10) || 0
+    } catch {
+      /* ignore */
+    }
+
+    if (rev > stored) {
+      clearCmsApiCache()
+    }
+
+    try {
+      const base = String(import.meta.env.BASE_URL || '/')
+      const originBase = base.endsWith('/') ? base : `${base}/`
+      const prefetchHref = new URL('cms-prefetch.json', window.location.origin + originBase).href
+      const res = await fetch(prefetchHref, { cache: 'no-cache' })
+      if (res.ok) {
+        const bundle = await res.json()
+        const bundleRev = Number(bundle?.revision ?? 0)
+        if (bundleRev === rev && bundle?.locales && typeof bundle.locales === 'object') {
+          primeCmsPrefetchBundle(bundle)
+        }
+      }
+    } catch {
+      /* no prefetch file */
+    }
+
+    try {
+      window.localStorage.setItem(REVISION_STORAGE_KEY, String(rev))
+    } catch {
+      /* quota */
+    }
+  } catch {
+    /* offline / API error — keep existing cache */
+  }
+}
+
 async function uncachedRequest(path, options, host) {
   const { locale, ...fetchOptions } = options
+  const method = String(fetchOptions.method || 'GET').toUpperCase()
+
+  if (method === 'GET') {
+    return fetchPublicJsonUncached(path, locale, host)
+  }
 
   /** @type {{ root: string, headers: Record<string, string> }[]} */
   const attempts = []

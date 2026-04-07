@@ -16,6 +16,25 @@ function formatDate(iso) {
   }
 }
 
+function BlogCardCover({ src, title }) {
+  const [broken, setBroken] = useState(false)
+  const url = src ? resolveCmsMediaUrl(src) : ''
+  if (!url || broken) {
+    return <div className="blog-card-image-placeholder" aria-hidden="true" />
+  }
+  return (
+    <img
+      src={url}
+      alt={title ? `Cover image for ${title}` : 'Blog post'}
+      className="blog-card-image"
+      loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
+      onError={() => setBroken(true)}
+    />
+  )
+}
+
 export default function BlogListPage() {
   const { lang } = useParams()
   const t = useTranslation(lang)
@@ -75,17 +94,7 @@ export default function BlogListPage() {
               className="blog-card"
             >
               <div className="blog-card-image-wrap">
-                {(post.og_image || post.image) ? (
-                  <img
-                    src={resolveCmsMediaUrl(post.og_image || post.image)}
-                    alt={post.title ? `Cover image for ${post.title}` : 'Blog post'}
-                    className="blog-card-image"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <div className="blog-card-image-placeholder" aria-hidden="true" />
-                )}
+                <BlogCardCover src={post.og_image || post.image} title={post.title} />
               </div>
               <div className="blog-card-body">
                 {post.published_at && (

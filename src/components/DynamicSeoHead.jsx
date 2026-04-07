@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { SeoHead } from './SeoHead'
 import { getHomeSeo } from '../api/cms'
@@ -6,6 +6,7 @@ import { defaultLang } from '../i18n/translations'
 import { injectHeadSnippet } from '../utils/injectHeadSnippet'
 import { headSnippetReferencesGaId, injectGa4 } from '../utils/injectGa4'
 import { isCmsHomeSeoRoute } from '../utils/publicSeoRoutes'
+import { buildLanguageAlternates, suffixFromPathname } from '../utils/hreflangForRoute'
 
 const envGaFallback = (typeof import.meta.env.VITE_GA_MEASUREMENT_ID === 'string'
   ? import.meta.env.VITE_GA_MEASUREMENT_ID
@@ -103,6 +104,13 @@ export default function DynamicSeoHead() {
     }
   }, [headSnippet, gaMeasurementId])
 
+  const homeHreflangAlternates = useMemo(() => {
+    if (typeof window === 'undefined') return null
+    if (!isCmsHomeSeoRoute(location.pathname)) return null
+    const suffix = suffixFromPathname(location.pathname)
+    return buildLanguageAlternates(window.location.origin, suffix)
+  }, [location.pathname])
+
   if (!isCmsHomeSeoRoute(location.pathname)) {
     return null
   }
@@ -119,6 +127,7 @@ export default function DynamicSeoHead() {
       ogTitle={seoData.og_title}
       ogDescription={seoData.og_description}
       ogImage={seoData.og_image}
+      hreflangAlternates={homeHreflangAlternates}
     />
   )
 }
