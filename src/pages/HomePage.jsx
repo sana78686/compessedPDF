@@ -2,7 +2,8 @@ import { useState, useCallback, useRef, useEffect, lazy, Suspense, startTransiti
 import { useLocation, useNavigate, useParams, Link } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { defaultLang } from '../i18n/translations'
-import { getFaq, getHomeCards, getBlogs, getHomePageContent } from '../api/cms'
+import { getFaq, getHomeCards, getBlogs, getHomePageContent, getToolSchemaJsonLd } from '../api/cms'
+import JsonLd from '../components/JsonLd'
 import './HomePage.css'
 import './CmsPage.css'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
@@ -95,6 +96,8 @@ function HomePage() {
   const [teaserBlogs, setTeaserBlogs] = useState([])
   /** CMS “Home page” rich text (locale-specific), from public /home-content */
   const [cmsHomeHtml, setCmsHomeHtml] = useState('')
+  const [homeJsonLd, setHomeJsonLd] = useState(null)
+  const [toolJsonLd, setToolJsonLd] = useState(null)
 
   const parsedSettings = useMemo(() => parseCompressionSettings(settings), [settings.dpi, settings.imageQuality])
   const canCompress = parsedSettings.valid && files.length > 0
@@ -124,15 +127,40 @@ function HomePage() {
       .then((res) => {
         if (cancelled) return
         setCmsHomeHtml(typeof res?.content === 'string' ? res.content : '')
+        const graph = res?.json_ld?.['@graph']
+        setHomeJsonLd(Array.isArray(graph) && graph.length > 0 ? res.json_ld : null)
       })
       .catch(() => {
-        if (!cancelled) setCmsHomeHtml('')
+        if (!cancelled) {
+          setCmsHomeHtml('')
+          setHomeJsonLd(null)
+        }
       })
     void Promise.all([blogPromise, homePromise])
     return () => {
       cancelled = true
     }
   }, [isHomeLanding, isCompressPage, lang])
+
+  useEffect(() => {
+    if (!isCompressPage) {
+      setToolJsonLd(null)
+      return undefined
+    }
+    let cancelled = false
+    getToolSchemaJsonLd(lang)
+      .then((res) => {
+        if (cancelled) return
+        const graph = res?.json_ld?.['@graph']
+        setToolJsonLd(Array.isArray(graph) && graph.length > 0 ? res.json_ld : null)
+      })
+      .catch(() => {
+        if (!cancelled) setToolJsonLd(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isCompressPage, lang])
 
   /* Fetch FAQ and cards when below-the-fold is shown */
   useEffect(() => {
@@ -482,6 +510,7 @@ function HomePage() {
 
   return (
     <div className="home-page">
+      <JsonLd data={isCompressPage ? toolJsonLd : isHomeLanding ? homeJsonLd : null} />
       <main id="main-content" className={`main ${!isCompressPage ? 'main--landing' : ''}`} tabIndex="-1">
         {isCompressPage && (
           <>

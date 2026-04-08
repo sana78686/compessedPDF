@@ -398,6 +398,11 @@ export function getHomePageContent(locale) {
   return request('/home-content', { locale })
 }
 
+/** JSON-LD for PDF tool route (WebApplication + FAQ + breadcrumb). Tenant comes from API host + X-Domain. */
+export function getToolSchemaJsonLd(locale) {
+  return request('/schema/tool', { locale })
+}
+
 /** @param {string} [locale] */
 export function getHomeSeo(locale) {
   return request('/home-content', { locale })

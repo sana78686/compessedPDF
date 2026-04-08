@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getPageBySlug } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
+import JsonLd from '../components/JsonLd'
 import { getPreferredLang, supportedLangs } from '../i18n/translations'
 import { buildHreflangAlternates } from '../utils/seoHreflang'
 import { absolutizeCmsHtml } from '../utils/cmsAssetUrl'
@@ -61,7 +62,7 @@ export default function CmsPage() {
   if (error || !data) {
     return (
       <div className="cms-page wrap">
-        <SeoHead title="Page not found" />
+        <SeoHead title="" />
         <p className="cms-page-error">{error || 'Page not found.'}</p>
         <Link to={`/${langPrefix}`} className="cms-page-back">← Back to home</Link>
       </div>
@@ -70,13 +71,14 @@ export default function CmsPage() {
 
   return (
     <article className="cms-page wrap">
+        <JsonLd data={data?.json_ld} />
         <SeoHead
-          title={data.meta_title || data.title}
-          description={data.meta_description}
+          title={data.meta_title ?? ''}
+          description={data.meta_description ?? ''}
           canonical={data.canonical_url}
           robots={data.meta_robots}
-          ogTitle={data.og_title}
-          ogDescription={data.og_description}
+          ogTitle={data.og_title ?? ''}
+          ogDescription={data.og_description ?? ''}
           ogImage={data.og_image}
           hreflangAlternates={hreflangAlternates}
         />

@@ -40,7 +40,7 @@ export default function LegalContentPage() {
   if (error || !data) {
     return (
       <div className="cms-page wrap">
-        <SeoHead title="Page not found" />
+        <SeoHead title="" />
         <p className="cms-page-error">{error || 'Page not found.'}</p>
         <Link to={`/${langPrefix}`} className="cms-page-back">← Back to home</Link>
       </div>
@@ -49,7 +49,7 @@ export default function LegalContentPage() {
 
   return (
     <article className="cms-page wrap">
-      <SeoHead title={data.title} description={data.title} />
+      <SeoHead title="" description="" />
       <header className="cms-page-header">
         <h1 className="cms-page-title">{data.title}</h1>
       </header>

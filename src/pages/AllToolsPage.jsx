@@ -50,7 +50,7 @@ function AllToolsPage() {
 
   return (
     <div className="all-tools-page home-page">
-      <SeoHead title={t('tools.pageTitle')} description={t('tools.frequentlyUsed')} />
+      <SeoHead title="" description="" />
       <main className="all-tools-main">
         <h1 className="all-tools-title">{t('tools.pageTitle')}</h1>
         <p className="all-tools-subtitle">{t('tools.frequentlyUsed')}</p>

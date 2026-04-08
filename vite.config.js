@@ -1,5 +1,35 @@
+import { readFileSync } from 'node:fs'
+import { resolve as pathResolve } from 'node:path'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+
+function readPackageVersion() {
+  try {
+    const raw = readFileSync(pathResolve(process.cwd(), 'package.json'), 'utf-8')
+    return String(JSON.parse(raw).version || '').trim()
+  } catch {
+    return ''
+  }
+}
+
+/** Bust browser/CDN caches for favicon after replacing assets (uses VITE_FAVICON_VERSION or package version). */
+function faviconCacheBustPlugin(viteEnv) {
+  const explicit = String(viteEnv.VITE_FAVICON_VERSION || '').trim()
+  const v = explicit || readPackageVersion() || String(Date.now())
+  const q = `?v=${encodeURIComponent(v)}`
+  return {
+    name: 'favicon-cache-bust',
+    transformIndexHtml: {
+      order: 'pre',
+      handler(html) {
+        return html
+          .replace(/href="\/favicon\.svg"/, `href="/favicon.svg${q}"`)
+          .replace(/href="\/favicon\.png"/, `href="/favicon.png${q}"`)
+          .replace(/href="\/logos\/compresspdf-favicon\.png"/, `href="/favicon.png${q}"`)
+      },
+    },
+  }
+}
 
 function normalizeSiteDomain(value) {
   return String(value ?? '')
@@ -110,8 +140,7 @@ function cmsSeoInjectPlugin(viteEnv) {
     transformIndexHtml: {
       order: 'pre',
       async handler(html, ctx) {
-        const SITE_NAME = 'Compress PDF'
-        const DEFAULT_OG_IMAGE = 'https://compresspdf.id/logos/compresspdf.png'
+        const SITE_NAME = String(viteEnv.VITE_PUBLIC_SITE_NAME || '').trim()
 
         // ctx.server is only defined when running the Vite dev server.
         const isDevServer = !!ctx?.server
@@ -176,15 +205,17 @@ function cmsSeoInjectPlugin(viteEnv) {
               .replace(/</g, '&lt;')
               .replace(/>/g, '&gt;')
 
-          const rawTitle  = data.meta_title      || SITE_NAME
-          const title     = rawTitle.trim() ? rawTitle.trim() : SITE_NAME
-          const desc      = data.meta_description || ''
-          const keywords  = data.meta_keywords    || ''
-          const ogTitle   = data.og_title         || rawTitle
-          const ogDesc    = data.og_description   || desc
-          const ogImageRaw = (data.og_image && String(data.og_image).trim()) || DEFAULT_OG_IMAGE
-          const ogImage = absoluteUrlForBuild(ogImageRaw, apiOrigin, siteOrigin)
-          const robots    = data.meta_robots      || 'index,follow'
+          const rawTitle = String(data.meta_title ?? '').trim()
+          const title = rawTitle
+          const desc = String(data.meta_description ?? '').trim()
+          const keywords = String(data.meta_keywords ?? '').trim()
+          const ogTitleRaw = String(data.og_title ?? '').trim()
+          const ogTitle = ogTitleRaw || rawTitle
+          const ogDescRaw = String(data.og_description ?? '').trim()
+          const ogDesc = ogDescRaw || desc
+          const ogImageRaw = data.og_image && String(data.og_image).trim()
+          const ogImage = ogImageRaw ? absoluteUrlForBuild(ogImageRaw, apiOrigin, siteOrigin) : ''
+          const robots = String(data.meta_robots ?? '').trim() || 'index,follow'
           const canonicalRaw = data.canonical_url ? String(data.canonical_url).trim() : ''
           const canonical = canonicalRaw ? absoluteUrlForBuild(canonicalRaw, apiOrigin, siteOrigin) : ''
           const headSnippet = String(data.head_snippet || '').trim()
@@ -207,15 +238,17 @@ function cmsSeoInjectPlugin(viteEnv) {
 
           // Inject remaining tags before </head>
           const tags = [
-            desc      && `    <meta name="description" content="${esc(desc)}" />`,
-            keywords  && `    <meta name="keywords" content="${esc(keywords)}" />`,
+            title && `    <meta name="title" content="${esc(title)}" />`,
+            desc && `    <meta name="description" content="${esc(desc)}" />`,
+            keywords && `    <meta name="keywords" content="${esc(keywords)}" />`,
             canonical && `    <link rel="canonical" href="${esc(canonical)}" />`,
-            `    <meta property="og:title" content="${esc(ogTitle)}" />`,
-            ogDesc    && `    <meta property="og:description" content="${esc(ogDesc)}" />`,
-            `    <meta property="og:image" content="${esc(ogImage)}" />`,
-            `    <meta name="twitter:title" content="${esc(ogTitle)}" />`,
-            ogDesc    && `    <meta name="twitter:description" content="${esc(ogDesc)}" />`,
-            `    <meta name="twitter:image" content="${esc(ogImage)}" />`,
+            ogTitle && `    <meta property="og:title" content="${esc(ogTitle)}" />`,
+            ogDesc && `    <meta property="og:description" content="${esc(ogDesc)}" />`,
+            ogImage && `    <meta property="og:image" content="${esc(ogImage)}" />`,
+            SITE_NAME && `    <meta property="og:site_name" content="${esc(SITE_NAME)}" />`,
+            ogTitle && `    <meta name="twitter:title" content="${esc(ogTitle)}" />`,
+            ogDesc && `    <meta name="twitter:description" content="${esc(ogDesc)}" />`,
+            ogImage && `    <meta name="twitter:image" content="${esc(ogImage)}" />`,
           ].filter(Boolean).join('\n')
 
           out = out.replace(
@@ -404,6 +437,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
+      faviconCacheBustPlugin(viteEnv),
       cmsSeoInjectPlugin(viteEnv),
       modulepreloadPlugin(),
       fetchSeoStaticPlugin(viteEnv),

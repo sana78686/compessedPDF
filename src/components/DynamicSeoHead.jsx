@@ -12,17 +12,16 @@ const envGaFallback = (typeof import.meta.env.VITE_GA_MEASUREMENT_ID === 'string
   ? import.meta.env.VITE_GA_MEASUREMENT_ID
   : '').trim()
 
-// Default SEO values as fallback
-const DEFAULT_SEO = {
-  meta_title:       'Compress PDF Files – Reduce File Size Online | Free PDF Compressor',
-  meta_description: 'Compress PDF files online for free. Reduce PDF file size while optimizing for maximal quality. Fast, secure, client-side compression—no uploads required.',
-  meta_keywords:    'compress PDF, reduce PDF size, PDF compressor, optimize PDF, free PDF compression',
-  focus_keyword:    'compress PDF',
-  og_title:         'Compress PDF',
-  og_description:   'Compress PDF files online for free. Reduce PDF file size while optimizing for maximal quality. Fast, secure, client-side compression—no uploads required.',
-  og_image:         '/logos/compresspdf.png',
-  meta_robots:      'index,follow',
-  canonical_url:    '',
+const EMPTY_SEO = {
+  meta_title: '',
+  meta_description: '',
+  meta_keywords: '',
+  focus_keyword: '',
+  og_title: '',
+  og_description: '',
+  og_image: '',
+  meta_robots: '',
+  canonical_url: '',
 }
 
 /**
@@ -36,7 +35,7 @@ const DEFAULT_SEO = {
  * Dev fallback: `VITE_GA_MEASUREMENT_ID` in `.env` when the API has no ID.
  */
 export default function DynamicSeoHead() {
-  const [seoData, setSeoData] = useState(DEFAULT_SEO)
+  const [seoData, setSeoData] = useState(EMPTY_SEO)
   const [headSnippet, setHeadSnippet] = useState('')
   const [gaMeasurementId, setGaMeasurementId] = useState(envGaFallback)
   const location = useLocation()
@@ -51,21 +50,23 @@ export default function DynamicSeoHead() {
         const data = await getHomeSeo(locale)
         if (!isMounted) return
         setSeoData({
-          meta_title:       data.meta_title       || DEFAULT_SEO.meta_title,
-          meta_description: data.meta_description || DEFAULT_SEO.meta_description,
-          meta_keywords:    data.meta_keywords    || DEFAULT_SEO.meta_keywords,
-          focus_keyword:    data.focus_keyword    || DEFAULT_SEO.focus_keyword,
-          og_title:         data.og_title         || DEFAULT_SEO.og_title,
-          og_description:   data.og_description   || DEFAULT_SEO.og_description,
-          og_image:         data.og_image         || DEFAULT_SEO.og_image,
-          meta_robots:      data.meta_robots      || DEFAULT_SEO.meta_robots,
-          canonical_url:    data.canonical_url    || DEFAULT_SEO.canonical_url,
+          meta_title: typeof data.meta_title === 'string' ? data.meta_title : '',
+          meta_description: typeof data.meta_description === 'string' ? data.meta_description : '',
+          meta_keywords: typeof data.meta_keywords === 'string' ? data.meta_keywords : '',
+          focus_keyword: typeof data.focus_keyword === 'string' ? data.focus_keyword : '',
+          og_title: typeof data.og_title === 'string' ? data.og_title : '',
+          og_description: typeof data.og_description === 'string' ? data.og_description : '',
+          og_image: typeof data.og_image === 'string' ? data.og_image : '',
+          meta_robots: typeof data.meta_robots === 'string' ? data.meta_robots : '',
+          canonical_url: typeof data.canonical_url === 'string' ? data.canonical_url : '',
         })
         setHeadSnippet(typeof data.head_snippet === 'string' ? data.head_snippet : '')
         const cmsGa = typeof data.ga_measurement_id === 'string' ? data.ga_measurement_id.trim() : ''
         setGaMeasurementId(cmsGa || envGaFallback)
       } catch (error) {
-        console.warn('Failed to load SEO data from CMS, using defaults:', error)
+        console.warn('Failed to load SEO data from CMS:', error)
+        if (!isMounted) return
+        setSeoData(EMPTY_SEO)
       }
     }
 
@@ -73,7 +74,6 @@ export default function DynamicSeoHead() {
     return () => { isMounted = false }
   }, [location.pathname])
 
-  // Defer third-party / CMS head scripts until idle so Lighthouse TBT and main-thread work improve.
   useEffect(() => {
     let cancelled = false
     const injected = []
@@ -115,6 +115,11 @@ export default function DynamicSeoHead() {
     return null
   }
 
+  const robots =
+    seoData.meta_robots && String(seoData.meta_robots).trim()
+      ? String(seoData.meta_robots).trim()
+      : 'index, follow'
+
   return (
     <SeoHead
       key={location.pathname}
@@ -122,7 +127,7 @@ export default function DynamicSeoHead() {
       title={seoData.meta_title}
       description={seoData.meta_description}
       keywords={seoData.meta_keywords}
-      robots={seoData.meta_robots}
+      robots={robots}
       canonical={seoData.canonical_url}
       ogTitle={seoData.og_title}
       ogDescription={seoData.og_description}

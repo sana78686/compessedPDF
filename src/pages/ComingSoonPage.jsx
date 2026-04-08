@@ -16,7 +16,7 @@ function ComingSoonPage() {
 
   return (
     <div className="coming-soon-page home-page">
-      <SeoHead title="Coming soon" description="This tool is under development. Try our Compress PDF tool in the meantime." />
+      <SeoHead title="" description="" />
       <main className="coming-soon-main">
         <h1 className="coming-soon-title">Coming soon</h1>
         <p className="coming-soon-text">This tool is under development. Try our Compress PDF tool in the meantime.</p>

@@ -1,22 +1,21 @@
 import { useEffect, useRef } from 'react'
-import { COMPRESS_PDF_EN } from '../constants/brand'
 import { resolveCmsMediaUrl } from '../utils/cmsAssetUrl'
 
-const DEFAULT_OG_IMAGE = '/logos/compresspdf.png'
-const SITE_NAME = COMPRESS_PDF_EN
+function trimStr(v) {
+  if (v == null) return ''
+  return String(v).trim()
+}
+
+function removeMeta(attr, name) {
+  const el = document.querySelector(`meta[${attr}="${name}"]`)
+  if (el?.parentNode) el.parentNode.removeChild(el)
+}
 
 /**
  * Sets document title and meta tags for SEO (search + social).
+ * No hardcoded site title or OG image: empty CMS fields stay empty unless you pass values.
  *
- * Design rules:
- *  - Only removes elements that THIS instance created (tracked via ownedEls ref).
- *    Elements that already existed in the DOM before this instance ran are
- *    updated in-place and left alone on unmount, so navigating between pages
- *    never wipes tags that another SeoHead will immediately restore.
- *  - The last SeoHead to mount wins for any given tag.
- *  - Use ogType="article" for blog/article posts, "website" for pages.
- *
- * @param {{ title, description, keywords, canonical, robots, ogTitle, ogDescription, ogImage, ogType, appendBrandSuffix?: boolean, hreflangAlternates?: { hreflang: string, href: string }[] }} props
+ * @param {{ title?, description?, keywords?, canonical?, robots?, ogTitle?, ogDescription?, ogImage?, ogType?, appendBrandSuffix?, brandSuffix?, siteName?, hreflangAlternates? }} props
  */
 export function SeoHead({
   title = '',
@@ -28,24 +27,36 @@ export function SeoHead({
   ogDescription,
   ogImage,
   ogType = 'website',
-  /** When false, `title` is used as the full document title (CMS SEO fields are already complete). */
-  appendBrandSuffix = true,
+  appendBrandSuffix = false,
+  brandSuffix = '',
+  siteName,
   hreflangAlternates = null,
 }) {
-  const t = title && String(title).trim() ? String(title).trim() : ''
-  const siteTitle = t
-    ? (appendBrandSuffix ? `${t} | ${SITE_NAME}` : t)
-    : SITE_NAME
-  const ogTitleFinal = ogTitle ?? title
-  const ogDescFinal  = ogDescription ?? description
+  const t = trimStr(title)
+  const siteNameResolved =
+    siteName !== undefined
+      ? trimStr(siteName)
+      : trimStr(
+          typeof import.meta.env.VITE_PUBLIC_SITE_NAME === 'string'
+            ? import.meta.env.VITE_PUBLIC_SITE_NAME
+            : '',
+        )
+  const suffix = trimStr(brandSuffix)
+  const documentTitle = appendBrandSuffix && t && suffix ? `${t} | ${suffix}` : t
 
-  // Track only the elements WE created so cleanup is surgical, not global.
-  const ownedEls       = useRef([])
+  const ogTitleFinal =
+    ogTitle !== undefined && ogTitle !== null ? trimStr(ogTitle) || t : t
+  const ogDescFinal =
+    ogDescription !== undefined && ogDescription !== null
+      ? trimStr(ogDescription) || trimStr(description)
+      : trimStr(description)
+
+  const ownedEls = useRef([])
   const ownedCanonical = useRef(false)
   const ownedHreflangs = useRef([])
 
   useEffect(() => {
-    document.title = siteTitle
+    document.title = documentTitle
 
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
@@ -57,9 +68,13 @@ export function SeoHead({
 
     const created = []
 
-    const setMeta = (name, content, isProperty = false) => {
-      if (content == null || content === '') return
+    const setOrRemoveMeta = (name, content, isProperty = false) => {
+      const c = trimStr(content)
       const attr = isProperty ? 'property' : 'name'
+      if (!c) {
+        removeMeta(attr, name)
+        return
+      }
       let el = document.querySelector(`meta[${attr}="${name}"]`)
       if (!el) {
         el = document.createElement('meta')
@@ -67,27 +82,39 @@ export function SeoHead({
         document.head.appendChild(el)
         created.push(el)
       }
-      el.setAttribute('content', String(content))
+      el.setAttribute('content', c)
     }
 
-    setMeta('description', description)
-    setMeta('keywords', keywords)
-    setMeta('robots', robots)
-    setMeta('og:title',        ogTitleFinal, true)
-    setMeta('og:description',  ogDescFinal,  true)
-    const ogImageUrl = ogImage
-      ? toAbsolute(resolveCmsMediaUrl(ogImage))
-      : toAbsolute(resolveCmsMediaUrl(DEFAULT_OG_IMAGE))
-    setMeta('og:image',     ogImageUrl, true)
-    setMeta('og:type',      ogType,     true)
-    setMeta('og:url',       origin && typeof window !== 'undefined' ? window.location.href : '', true)
-    setMeta('og:site_name', SITE_NAME,  true)
-    setMeta('twitter:card',        'summary_large_image', true)
-    setMeta('twitter:title',       ogTitleFinal,          true)
-    setMeta('twitter:description', ogDescFinal,           true)
-    setMeta('twitter:image',       ogImageUrl,            true)
+    setOrRemoveMeta('title', documentTitle)
+    setOrRemoveMeta('description', description)
+    setOrRemoveMeta('keywords', keywords)
+    setOrRemoveMeta('robots', robots)
 
-    // Canonical
+    setOrRemoveMeta('og:title', ogTitleFinal, true)
+    setOrRemoveMeta('og:description', ogDescFinal, true)
+    const resolvedImg = trimStr(ogImage) ? resolveCmsMediaUrl(ogImage) : ''
+    const ogImageUrl = resolvedImg ? toAbsolute(resolvedImg) : ''
+    setOrRemoveMeta('og:image', ogImageUrl, true)
+    setOrRemoveMeta('og:type', ogType, true)
+    setOrRemoveMeta('og:url', origin && typeof window !== 'undefined' ? window.location.href : '', true)
+    setOrRemoveMeta('og:site_name', siteNameResolved, true)
+
+    if (ogTitleFinal || ogDescFinal || ogImageUrl) {
+      setOrRemoveMeta(
+        'twitter:card',
+        ogImageUrl ? 'summary_large_image' : 'summary',
+        false,
+      )
+      setOrRemoveMeta('twitter:title', ogTitleFinal, false)
+      setOrRemoveMeta('twitter:description', ogDescFinal, false)
+      setOrRemoveMeta('twitter:image', ogImageUrl, false)
+    } else {
+      removeMeta('name', 'twitter:card')
+      removeMeta('name', 'twitter:title')
+      removeMeta('name', 'twitter:description')
+      removeMeta('name', 'twitter:image')
+    }
+
     let canonicalEl = document.querySelector('link[rel="canonical"]')
     const canonicalHref = canonical
       ? toAbsolute(canonical)
@@ -110,8 +137,6 @@ export function SeoHead({
     ownedEls.current = created
 
     return () => {
-      // Only remove elements this instance created — never touch elements
-      // that were already in the DOM (they will be updated by the next SeoHead).
       ownedEls.current.forEach((el) => el?.parentNode?.removeChild(el))
       ownedEls.current = []
       if (ownedCanonical.current) {
@@ -120,7 +145,18 @@ export function SeoHead({
         ownedCanonical.current = false
       }
     }
-  }, [siteTitle, description, keywords, robots, canonical, ogTitleFinal, ogDescFinal, ogImage, ogType])
+  }, [
+    documentTitle,
+    description,
+    keywords,
+    robots,
+    canonical,
+    ogTitleFinal,
+    ogDescFinal,
+    ogImage,
+    ogType,
+    siteNameResolved,
+  ])
 
   useEffect(() => {
     ownedHreflangs.current.forEach((el) => el?.parentNode?.removeChild(el))

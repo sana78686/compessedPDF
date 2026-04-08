@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getBlogBySlug } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
+import JsonLd from '../components/JsonLd'
 import { useTranslation } from '../i18n/useTranslation'
 import { getPreferredLang, supportedLangs } from '../i18n/translations'
 import { buildHreflangAlternates } from '../utils/seoHreflang'
@@ -92,7 +93,7 @@ export default function CmsBlog() {
   if (error || !data) {
     return (
       <div className="cms-page wrap">
-        <SeoHead title="Post not found" />
+        <SeoHead title="" />
         <p className="cms-page-error">{error || 'Post not found.'}</p>
         <Link to={`/${langPrefix}`} className="cms-page-back">← Back to home</Link>
       </div>
@@ -100,18 +101,20 @@ export default function CmsBlog() {
   }
 
   const heroResolved = resolveCmsMediaUrl(data.og_image || data.image)
+  const ogImageResolved = data.og_image ? resolveCmsMediaUrl(data.og_image) : ''
   const authorName = data.author?.name
 
   return (
     <article className="cms-page cms-blog wrap">
+      <JsonLd data={data?.json_ld} />
       <SeoHead
-        title={data.meta_title || data.title}
-        description={data.meta_description || data.excerpt}
+        title={data.meta_title ?? ''}
+        description={data.meta_description ?? ''}
         canonical={data.canonical_url}
         robots={data.meta_robots}
-        ogTitle={data.og_title}
-        ogDescription={data.og_description}
-        ogImage={heroResolved}
+        ogTitle={data.og_title ?? ''}
+        ogDescription={data.og_description ?? ''}
+        ogImage={ogImageResolved}
         ogType="article"
         hreflangAlternates={hreflangAlternates}
       />

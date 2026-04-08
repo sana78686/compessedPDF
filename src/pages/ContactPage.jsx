@@ -112,7 +112,7 @@ export default function ContactPage() {
   if (error) {
     return (
       <div className="contact-page wrap">
-        <SeoHead title={t('contact.title')} />
+        <SeoHead title="" />
         <p className="contact-page-error">{error}</p>
         <Link to={`/${langPrefix}`} className="contact-page-back">← {t('contact.backHome')}</Link>
       </div>
@@ -121,7 +121,7 @@ export default function ContactPage() {
 
   return (
     <article className="contact-page wrap">
-      <SeoHead title={t('contact.title')} description={t('contact.description')} />
+      <SeoHead title="" description="" />
       <div className="contact-page-grid">
         <div className="contact-page-intro">
           <h1 className="contact-page-title">{t('contact.title')}</h1>

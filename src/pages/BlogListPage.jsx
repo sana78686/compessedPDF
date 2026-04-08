@@ -66,7 +66,7 @@ export default function BlogListPage() {
   if (error) {
     return (
       <div className="blog-list-page wrap">
-        <SeoHead title={t('blog.listTitle')} />
+        <SeoHead title="" />
         <p className="blog-list-error">{error}</p>
         <Link to={`/${langPrefix}`} className="blog-list-back">← {t('blog.backHome')}</Link>
       </div>
@@ -75,7 +75,7 @@ export default function BlogListPage() {
 
   return (
     <article className="blog-list-page wrap">
-      <SeoHead title={t('blog.listTitle')} description={t('blog.listIntro')} />
+      <SeoHead title="" description="" />
       <header className="blog-list-header">
         <h1 className="blog-list-title">{t('blog.listTitle')}</h1>
         <p className="blog-list-intro">{t('blog.listIntro')}</p>
