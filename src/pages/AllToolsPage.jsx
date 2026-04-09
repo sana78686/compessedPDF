@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
-import { defaultLang } from '../i18n/translations'
+import { defaultLang, langToOgLocale } from '../i18n/translations'
 import { SeoHead } from '../components/SeoHead'
 import { COMPRESS_PDF_EN } from '../constants/brand'
 import './HomePage.css'
@@ -50,7 +50,14 @@ function AllToolsPage() {
 
   return (
     <div className="all-tools-page home-page">
-      <SeoHead title="" description="" />
+      <SeoHead
+        title={t('tools.pageTitle')}
+        description={t('tools.frequentlyUsed')}
+        robots="index,follow"
+        ogTitle={t('tools.pageTitle')}
+        ogDescription={t('tools.frequentlyUsed')}
+        ogLocale={langToOgLocale(lang)}
+      />
       <main className="all-tools-main">
         <h1 className="all-tools-title">{t('tools.pageTitle')}</h1>
         <p className="all-tools-subtitle">{t('tools.frequentlyUsed')}</p>

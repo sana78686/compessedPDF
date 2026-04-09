@@ -4,7 +4,7 @@ import { getBlogBySlug } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
 import JsonLd from '../components/JsonLd'
 import { useTranslation } from '../i18n/useTranslation'
-import { getPreferredLang, supportedLangs } from '../i18n/translations'
+import { getPreferredLang, supportedLangs, langToOgLocale } from '../i18n/translations'
 import { buildHreflangAlternates } from '../utils/seoHreflang'
 import { absolutizeCmsHtml, resolveCmsMediaUrl } from '../utils/cmsAssetUrl'
 import './CmsPage.css'
@@ -31,6 +31,11 @@ function formatShortDate(iso) {
   } catch {
     return iso
   }
+}
+
+function plainText(html) {
+  if (!html || typeof html !== 'string') return ''
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
 export default function CmsBlog() {
@@ -77,6 +82,7 @@ export default function CmsBlog() {
   if (loading) {
     return (
       <div className="cms-page wrap">
+        <SeoHead title="Loading…" robots="noindex" />
         <p className="cms-page-loading">Loading…</p>
       </div>
     )
@@ -103,19 +109,33 @@ export default function CmsBlog() {
   const heroResolved = resolveCmsMediaUrl(data.og_image || data.image)
   const ogImageResolved = data.og_image ? resolveCmsMediaUrl(data.og_image) : ''
   const authorName = data.author?.name
+  // #region agent log
+  fetch('http://127.0.0.1:7923/ingest/adc12192-b7f9-4d03-95de-e6d1ef0803f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'adc45b'},body:JSON.stringify({sessionId:'adc45b',location:'CmsBlog.jsx:112',message:'Blog image data',data:{slug:data.slug,og_image:data.og_image,image:data.image,heroResolved,ogImageResolved,heroBroken},timestamp:Date.now(),hypothesisId:'A,B,C'})}).catch(()=>{});
+  // #endregion
+  const fallbackTitle = String(data?.title || '').trim()
+  const fallbackDescription = (
+    String(data?.meta_description || '').trim() ||
+    String(data?.excerpt || '').trim() ||
+    plainText(data?.content).slice(0, 160)
+  )
 
   return (
     <article className="cms-page cms-blog wrap">
       <JsonLd data={data?.json_ld} />
       <SeoHead
-        title={data.meta_title ?? ''}
-        description={data.meta_description ?? ''}
+        title={(data.meta_title || fallbackTitle || '').trim()}
+        description={(fallbackDescription || '').trim()}
+        keywords={data.meta_keywords || ''}
         canonical={data.canonical_url}
-        robots={data.meta_robots}
-        ogTitle={data.og_title ?? ''}
-        ogDescription={data.og_description ?? ''}
+        robots={(data.meta_robots || 'index,follow').trim()}
+        ogTitle={(data.og_title || data.meta_title || fallbackTitle || '').trim()}
+        ogDescription={(data.og_description || fallbackDescription || '').trim()}
         ogImage={ogImageResolved}
         ogType="article"
+        ogLocale={langToOgLocale(lang)}
+        articlePublishedTime={data.published_at || ''}
+        articleModifiedTime={data.updated_at || ''}
+        articleAuthor={data.author?.name || ''}
         hreflangAlternates={hreflangAlternates}
       />
       <header className="cms-blog-header">
@@ -137,20 +157,12 @@ export default function CmsBlog() {
               </dd>
             </div>
           )}
-          <div className="cms-blog-meta-row">
-            <dt>Author</dt>
-            <dd>{authorName || 'No Author'}</dd>
-          </div>
-          <div className="cms-blog-meta-row">
-            <dt>Category</dt>
-            <dd>{data.category || 'No Category'}</dd>
-          </div>
-          <div className="cms-blog-meta-row">
-            <dt>Tags</dt>
-            <dd>
-              {Array.isArray(data.tags) ? data.tags.join(', ') : typeof data.tags === 'string' ? data.tags : 'No Tags'}
-            </dd>
-          </div>
+          {authorName && (
+            <div className="cms-blog-meta-row">
+              <dt>Author</dt>
+              <dd>{authorName}</dd>
+            </div>
+          )}
         </dl>
         {heroResolved && !heroBroken ? (
           <div className="cms-blog-hero">
@@ -161,7 +173,7 @@ export default function CmsBlog() {
               loading="eager"
               decoding="async"
               referrerPolicy="no-referrer"
-              onError={() => setHeroBroken(true)}
+              onError={(e) => { fetch('http://127.0.0.1:7923/ingest/adc12192-b7f9-4d03-95de-e6d1ef0803f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'adc45b'},body:JSON.stringify({sessionId:'adc45b',location:'CmsBlog.jsx:img-onError',message:'Hero image load failed',data:{src:heroResolved,naturalWidth:e.target?.naturalWidth},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{}); setHeroBroken(true); }}
             />
           </div>
         ) : (

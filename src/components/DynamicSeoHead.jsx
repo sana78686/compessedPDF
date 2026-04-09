@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { SeoHead } from './SeoHead'
 import { getHomeSeo } from '../api/cms'
-import { defaultLang } from '../i18n/translations'
+import { defaultLang, langToOgLocale } from '../i18n/translations'
 import { injectHeadSnippet } from '../utils/injectHeadSnippet'
 import { headSnippetReferencesGaId, injectGa4 } from '../utils/injectGa4'
 import { isCmsHomeSeoRoute } from '../utils/publicSeoRoutes'
@@ -40,10 +40,13 @@ export default function DynamicSeoHead() {
   const [gaMeasurementId, setGaMeasurementId] = useState(envGaFallback)
   const location = useLocation()
 
+  const pathMatch = location.pathname.match(/^\/([a-z]{2})(\/|$)/)
+  const locale = pathMatch?.[1] || defaultLang
+  const isHomeRoute = isCmsHomeSeoRoute(location.pathname)
+
   useEffect(() => {
+    if (!isHomeRoute) return
     let isMounted = true
-    const pathMatch = location.pathname.match(/^\/([a-z]{2})(\/|$)/)
-    const locale = pathMatch && pathMatch[1] ? pathMatch[1] : defaultLang
 
     async function loadSeoData() {
       try {
@@ -63,16 +66,18 @@ export default function DynamicSeoHead() {
         setHeadSnippet(typeof data.head_snippet === 'string' ? data.head_snippet : '')
         const cmsGa = typeof data.ga_measurement_id === 'string' ? data.ga_measurement_id.trim() : ''
         setGaMeasurementId(cmsGa || envGaFallback)
-      } catch (error) {
-        console.warn('Failed to load SEO data from CMS:', error)
+      } catch (err) {
+        console.warn('Failed to load SEO data from CMS:', err)
         if (!isMounted) return
         setSeoData(EMPTY_SEO)
+        setHeadSnippet('')
+        setGaMeasurementId(envGaFallback)
       }
     }
 
     loadSeoData()
     return () => { isMounted = false }
-  }, [location.pathname])
+  }, [isHomeRoute, locale])
 
   useEffect(() => {
     let cancelled = false
@@ -106,12 +111,12 @@ export default function DynamicSeoHead() {
 
   const homeHreflangAlternates = useMemo(() => {
     if (typeof window === 'undefined') return null
-    if (!isCmsHomeSeoRoute(location.pathname)) return null
+    if (!isHomeRoute) return null
     const suffix = suffixFromPathname(location.pathname)
     return buildLanguageAlternates(window.location.origin, suffix)
-  }, [location.pathname])
+  }, [isHomeRoute, location.pathname])
 
-  if (!isCmsHomeSeoRoute(location.pathname)) {
+  if (!isHomeRoute) {
     return null
   }
 
@@ -132,6 +137,7 @@ export default function DynamicSeoHead() {
       ogTitle={seoData.og_title}
       ogDescription={seoData.og_description}
       ogImage={seoData.og_image}
+      ogLocale={langToOgLocale(locale)}
       hreflangAlternates={homeHreflangAlternates}
     />
   )

@@ -398,6 +398,11 @@ export function getHomeCards(locale) {
 }
 
 /** @param {string} [locale] */
+export function getSections(locale) {
+  return request('/sections', { locale })
+}
+
+/** @param {string} [locale] */
 export function getHomePageContent(locale) {
   return request('/home-content', { locale })
 }

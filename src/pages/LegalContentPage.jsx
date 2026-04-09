@@ -2,10 +2,16 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getLegalPage } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
-import { getPreferredLang, supportedLangs } from '../i18n/translations'
+import { absolutizeCmsHtml } from '../utils/cmsAssetUrl'
+import { getPreferredLang, supportedLangs, langToOgLocale } from '../i18n/translations'
 import './CmsPage.css'
 
 const VALID_SLUGS = ['terms', 'privacy-policy', 'disclaimer', 'about-us', 'cookie-policy']
+
+function plainText(html) {
+  if (!html || typeof html !== 'string') return ''
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+}
 
 export default function LegalContentPage() {
   const { lang, slug } = useParams()
@@ -32,6 +38,7 @@ export default function LegalContentPage() {
   if (loading) {
     return (
       <div className="cms-page wrap">
+        <SeoHead title="Loading…" robots="noindex" />
         <p className="cms-page-loading">Loading…</p>
       </div>
     )
@@ -49,13 +56,20 @@ export default function LegalContentPage() {
 
   return (
     <article className="cms-page wrap">
-      <SeoHead title="" description="" />
+      <SeoHead
+        title={data.title || ''}
+        description={plainText(data.content || '').slice(0, 160)}
+        robots="index,follow"
+        ogTitle={data.title || ''}
+        ogDescription={plainText(data.content || '').slice(0, 160)}
+        ogLocale={langToOgLocale(lang)}
+      />
       <header className="cms-page-header">
         <h1 className="cms-page-title">{data.title}</h1>
       </header>
       <div
         className="cms-page-content legal-content-body"
-        dangerouslySetInnerHTML={{ __html: data.content || '' }}
+        dangerouslySetInnerHTML={{ __html: absolutizeCmsHtml(data.content || '') }}
       />
       <footer className="cms-page-footer">
         <Link to={`/${langPrefix}`} className="cms-page-back">

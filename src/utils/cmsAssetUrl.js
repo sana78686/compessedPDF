@@ -91,6 +91,15 @@ export function resolveCmsMediaUrl(url) {
       }
       return publicMediaProxyUrl(rel)
     }
+    try {
+      const u = new URL(s.startsWith('//') ? `https:${s}` : s)
+      if (u.pathname.startsWith('/cms-uploads/')) {
+        const relCms = u.pathname.replace(/^\/+/, '')
+        return publicMediaProxyUrl(relCms)
+      }
+    } catch {
+      /* keep raw URL */
+    }
     return s
   }
 
@@ -99,7 +108,8 @@ export function resolveCmsMediaUrl(url) {
     return origin ? `${origin}${path}` : path
   }
   if (path.startsWith('/cms-uploads/')) {
-    return origin ? `${origin}${path}` : path
+    const relCms = path.replace(/^\/+/, '')
+    return publicMediaProxyUrl(relCms)
   }
   if (path.startsWith('/storage/')) {
     const inner = path.replace(/^\/storage\//, '').replace(/^\/+/, '')

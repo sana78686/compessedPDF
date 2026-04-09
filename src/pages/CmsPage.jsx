@@ -3,10 +3,15 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getPageBySlug } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
 import JsonLd from '../components/JsonLd'
-import { getPreferredLang, supportedLangs } from '../i18n/translations'
+import { getPreferredLang, supportedLangs, langToOgLocale } from '../i18n/translations'
 import { buildHreflangAlternates } from '../utils/seoHreflang'
 import { absolutizeCmsHtml } from '../utils/cmsAssetUrl'
 import './CmsPage.css'
+
+function plainText(html) {
+  if (!html || typeof html !== 'string') return ''
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+}
 
 export default function CmsPage() {
   const { lang, slug } = useParams()
@@ -42,10 +47,13 @@ export default function CmsPage() {
   }, [data, error, slug, alternateLocalesKey])
 
   const langPrefix = supportedLangs.includes(lang) ? lang : getPreferredLang()
+  const fallbackTitle = String(data?.title || '').trim()
+  const fallbackDescription = plainText(data?.content).slice(0, 160)
 
   if (loading) {
     return (
       <div className="cms-page wrap">
+        <SeoHead title="Loading…" robots="noindex" />
         <p className="cms-page-loading">Loading…</p>
       </div>
     )
@@ -73,16 +81,23 @@ export default function CmsPage() {
     <article className="cms-page wrap">
         <JsonLd data={data?.json_ld} />
         <SeoHead
-          title={data.meta_title ?? ''}
-          description={data.meta_description ?? ''}
+          title={(data.meta_title || fallbackTitle || '').trim()}
+          description={(data.meta_description || fallbackDescription || '').trim()}
+          keywords={data.meta_keywords || ''}
           canonical={data.canonical_url}
-          robots={data.meta_robots}
-          ogTitle={data.og_title ?? ''}
-          ogDescription={data.og_description ?? ''}
+          robots={(data.meta_robots || 'index,follow').trim()}
+          ogTitle={(data.og_title || data.meta_title || fallbackTitle || '').trim()}
+          ogDescription={(data.og_description || data.meta_description || fallbackDescription || '').trim()}
           ogImage={data.og_image}
+          ogLocale={langToOgLocale(lang)}
           hreflangAlternates={hreflangAlternates}
         />
         <header className="cms-page-header">
+          <nav className="cms-page-breadcrumb" aria-label="Breadcrumb">
+            <Link to={`/${langPrefix}`}>Home</Link>
+            <span aria-hidden="true"> / </span>
+            <span>{data.title}</span>
+          </nav>
           <h1 className="cms-page-title">{data.title}</h1>
         </header>
         <div

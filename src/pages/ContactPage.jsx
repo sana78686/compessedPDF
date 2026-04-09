@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { getContactSettings, submitContactForm } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
-import { getPreferredLang, supportedLangs } from '../i18n/translations'
+import { getPreferredLang, supportedLangs, langToOgLocale } from '../i18n/translations'
 import './ContactPage.css'
 
 export default function ContactPage() {
@@ -104,6 +104,7 @@ export default function ContactPage() {
   if (loading) {
     return (
       <div className="contact-page wrap">
+        <SeoHead title={t('contact.title')} robots="noindex" />
         <p className="contact-page-loading">Loading…</p>
       </div>
     )
@@ -112,7 +113,7 @@ export default function ContactPage() {
   if (error) {
     return (
       <div className="contact-page wrap">
-        <SeoHead title="" />
+        <SeoHead title={t('contact.title')} robots="index,follow" />
         <p className="contact-page-error">{error}</p>
         <Link to={`/${langPrefix}`} className="contact-page-back">← {t('contact.backHome')}</Link>
       </div>
@@ -121,7 +122,14 @@ export default function ContactPage() {
 
   return (
     <article className="contact-page wrap">
-      <SeoHead title="" description="" />
+      <SeoHead
+        title={t('contact.title')}
+        description={t('contact.intro')}
+        robots="index,follow"
+        ogTitle={t('contact.title')}
+        ogDescription={t('contact.intro')}
+        ogLocale={langToOgLocale(lang)}
+      />
       <div className="contact-page-grid">
         <div className="contact-page-intro">
           <h1 className="contact-page-title">{t('contact.title')}</h1>
@@ -279,11 +287,11 @@ export default function ContactPage() {
                   />
                   <span>
                     {t('contact.iAccept')}{' '}
-                    <Link to={`/${langPrefix}/page/terms`} className="contact-form-legal-link">
+                    <Link to={`/${langPrefix}/legal/terms`} className="contact-form-legal-link">
                       {t('contact.termsAndConditions')}
                     </Link>
                     {' and '}
-                    <Link to={`/${langPrefix}/page/privacy`} className="contact-form-legal-link">
+                    <Link to={`/${langPrefix}/legal/privacy-policy`} className="contact-form-legal-link">
                       {t('contact.legalPrivacy')}
                     </Link>
                   </span>

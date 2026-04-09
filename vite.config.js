@@ -523,7 +523,7 @@ function cmsPrefetchPlugin(viteEnv) {
 
       const localesStr = String(viteEnv.VITE_CMS_PREFETCH_LOCALES || 'en,id').trim()
       const locales = localesStr.split(/[\s,]+/).filter(Boolean)
-      const paths = ['/home-content', '/faq', '/pages', '/blogs', '/home-cards', '/legal-nav', '/contact']
+      const paths = ['/home-content', '/faq', '/pages', '/blogs', '/home-cards', '/sections', '/legal-nav', '/contact']
       const bundle = { revision, locales: {} }
 
       const prefetchLegalBodies =

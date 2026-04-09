@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { getBlogs } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
-import { getPreferredLang, supportedLangs } from '../i18n/translations'
+import { getPreferredLang, supportedLangs, langToOgLocale } from '../i18n/translations'
 import { resolveCmsMediaUrl } from '../utils/cmsAssetUrl'
 import './BlogListPage.css'
 
@@ -19,6 +19,9 @@ function formatDate(iso) {
 function BlogCardCover({ src, title }) {
   const [broken, setBroken] = useState(false)
   const url = src ? resolveCmsMediaUrl(src) : ''
+  // #region agent log
+  fetch('http://127.0.0.1:7923/ingest/adc12192-b7f9-4d03-95de-e6d1ef0803f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'adc45b'},body:JSON.stringify({sessionId:'adc45b',location:'BlogListPage.jsx:BlogCardCover',message:'Blog card image',data:{rawSrc:src,resolvedUrl:url,broken,title},timestamp:Date.now(),hypothesisId:'A,E'})}).catch(()=>{});
+  // #endregion
   if (!url || broken) {
     return <div className="blog-card-image-placeholder" aria-hidden="true" />
   }
@@ -30,7 +33,7 @@ function BlogCardCover({ src, title }) {
       loading="lazy"
       decoding="async"
       referrerPolicy="no-referrer"
-      onError={() => setBroken(true)}
+      onError={() => { fetch('http://127.0.0.1:7923/ingest/adc12192-b7f9-4d03-95de-e6d1ef0803f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'adc45b'},body:JSON.stringify({sessionId:'adc45b',location:'BlogListPage.jsx:img-onError',message:'Card image load failed',data:{src:url,title},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{}); setBroken(true); }}
     />
   )
 }
@@ -58,6 +61,7 @@ export default function BlogListPage() {
   if (loading) {
     return (
       <div className="blog-list-page wrap">
+        <SeoHead title={t('blog.listTitle')} robots="noindex" />
         <p className="blog-list-loading">Loading…</p>
       </div>
     )
@@ -66,7 +70,14 @@ export default function BlogListPage() {
   if (error) {
     return (
       <div className="blog-list-page wrap">
-        <SeoHead title="" />
+        <SeoHead
+          title={t('blog.listTitle')}
+          description={t('blog.listIntro')}
+          robots="index,follow"
+          ogTitle={t('blog.listTitle')}
+          ogDescription={t('blog.listIntro')}
+          ogLocale={langToOgLocale(lang)}
+        />
         <p className="blog-list-error">{error}</p>
         <Link to={`/${langPrefix}`} className="blog-list-back">← {t('blog.backHome')}</Link>
       </div>
@@ -75,7 +86,14 @@ export default function BlogListPage() {
 
   return (
     <article className="blog-list-page wrap">
-      <SeoHead title="" description="" />
+      <SeoHead
+        title={t('blog.listTitle')}
+        description={t('blog.listIntro')}
+        robots="index,follow"
+        ogTitle={t('blog.listTitle')}
+        ogDescription={t('blog.listIntro')}
+        ogLocale={langToOgLocale(lang)}
+      />
       <header className="blog-list-header">
         <h1 className="blog-list-title">{t('blog.listTitle')}</h1>
         <p className="blog-list-intro">{t('blog.listIntro')}</p>

@@ -27,6 +27,10 @@ export function SeoHead({
   ogDescription,
   ogImage,
   ogType = 'website',
+  ogLocale = '',
+  articlePublishedTime = '',
+  articleModifiedTime = '',
+  articleAuthor = '',
   appendBrandSuffix = false,
   brandSuffix = '',
   siteName,
@@ -98,6 +102,17 @@ export function SeoHead({
     setOrRemoveMeta('og:type', ogType, true)
     setOrRemoveMeta('og:url', origin && typeof window !== 'undefined' ? window.location.href : '', true)
     setOrRemoveMeta('og:site_name', siteNameResolved, true)
+    setOrRemoveMeta('og:locale', ogLocale, true)
+
+    if (ogType === 'article') {
+      setOrRemoveMeta('article:published_time', articlePublishedTime, true)
+      setOrRemoveMeta('article:modified_time', articleModifiedTime, true)
+      setOrRemoveMeta('article:author', articleAuthor, true)
+    } else {
+      removeMeta('property', 'article:published_time')
+      removeMeta('property', 'article:modified_time')
+      removeMeta('property', 'article:author')
+    }
 
     if (ogTitleFinal || ogDescFinal || ogImageUrl) {
       setOrRemoveMeta(
@@ -155,6 +170,10 @@ export function SeoHead({
     ogDescFinal,
     ogImage,
     ogType,
+    ogLocale,
+    articlePublishedTime,
+    articleModifiedTime,
+    articleAuthor,
     siteNameResolved,
   ])
 

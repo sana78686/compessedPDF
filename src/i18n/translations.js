@@ -433,6 +433,20 @@ export const defaultLang = 'id'
 
 export const supportedLangs = ['id', 'en', 'ms', 'es', 'fr', 'ar', 'ru']
 
+const OG_LOCALE_MAP = {
+  id: 'id_ID',
+  en: 'en_US',
+  ms: 'ms_MY',
+  es: 'es_ES',
+  fr: 'fr_FR',
+  ar: 'ar_SA',
+  ru: 'ru_RU',
+}
+
+export function langToOgLocale(lang) {
+  return OG_LOCALE_MAP[lang] || lang || ''
+}
+
 /** Strings always resolve from English if missing in the active locale (avoids recursion when defaultLang is id). */
 const TRANSLATION_FALLBACK = 'en'
 

@@ -32,6 +32,21 @@
   letter-spacing: -0.02em;
 }
 
+.cms-page-breadcrumb {
+  margin-bottom: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.cms-page-breadcrumb a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.cms-page-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
 .cms-page-content {
   font-size: 1.0625rem;
   line-height: 1.7;
