@@ -217,6 +217,10 @@ function primeCmsPrefetchBundle(bundle) {
 /**
  * Before first paint: compare CMS content-revision to last visit; if newer, drop caches.
  * If `dist/cms-prefetch.json` exists and its revision matches, hydrate memory/session cache (no API round-trips).
+ *
+ * The JSON is produced at `vite build` (cmsPrefetchPlugin): per locale it contains API paths as keys
+ * (e.g. `/home-content`, `/legal/privacy-policy`, optionally `/pages/{slug}`, `/blogs/{slug}`) — anything
+ * the build included is primed here so `request()` hits memory/sessionStorage first.
  */
 export async function prepareCmsClient() {
   if (typeof window === 'undefined') return

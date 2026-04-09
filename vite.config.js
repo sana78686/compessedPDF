@@ -85,6 +85,119 @@ function encodePathSegments(rel) {
     .join('/')
 }
 
+function escapeHtmlAttr(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+}
+
+/** Origin from VITE_API_URL for dns-prefetch / preconnect (no path). */
+function originFromApiUrl(viteEnv) {
+  const raw = String(viteEnv.VITE_API_URL || '').trim()
+  if (!raw) return ''
+  try {
+    const u = new URL(/^[a-z]+:\/\//i.test(raw) ? raw : `https://${raw}`)
+    return u.origin
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * Injects first-party shell hints from env: API + site origins, optional flag CDN, theme-color,
+ * default robots / og:type / twitter:card, and <html lang>. Home SEO from cms-seo-inject still overrides
+ * robots (and adds title/description/OG) when the CMS fetch succeeds.
+ */
+function indexShellHeadPlugin(viteEnv) {
+  return {
+    name: 'index-shell-head',
+    transformIndexHtml: {
+      order: 'pre',
+      handler(html) {
+        const apiOrigin = originFromApiUrl(viteEnv)
+        const siteOrigin = siteOriginFromEnv(viteEnv)
+        const rawLang = String(viteEnv.VITE_HTML_LANG || viteEnv.VITE_BUILD_SEO_LOCALE || 'en').trim()
+        const htmlLang =
+          rawLang.split(/[-_]/)[0].replace(/[^a-z]/gi, '').toLowerCase() || 'en'
+        const themeColor = String(
+          viteEnv.VITE_PUBLIC_THEME_COLOR || viteEnv.VITE_THEME_COLOR || '#ffffff',
+        ).trim()
+        const robotsDefault = String(viteEnv.VITE_INDEX_ROBOTS || 'index, follow').trim()
+        const ogType = String(viteEnv.VITE_INDEX_OG_TYPE || 'website').trim()
+        const twitterCard = String(viteEnv.VITE_INDEX_TWITTER_CARD || 'summary_large_image').trim()
+
+        let flagOrigin = String(viteEnv.VITE_FLAG_CDN_ORIGIN ?? 'https://flagcdn.com').trim()
+        if (flagOrigin === '0' || flagOrigin.toLowerCase() === 'false') {
+          flagOrigin = ''
+        } else if (flagOrigin !== '') {
+          try {
+            flagOrigin = new URL(/^[a-z]+:\/\//i.test(flagOrigin) ? flagOrigin : `https://${flagOrigin}`).origin
+          } catch {
+            flagOrigin = 'https://flagcdn.com'
+          }
+        }
+
+        const lines = [
+          '    <!-- Shell head: Vite env + optional extras (see .env.example). cms-seo-inject may override robots/meta for home. -->',
+        ]
+        if (apiOrigin) {
+          lines.push(`    <link rel="dns-prefetch" href="${escapeHtmlAttr(apiOrigin)}" />`)
+          lines.push(`    <link rel="preconnect" href="${escapeHtmlAttr(apiOrigin)}" crossorigin />`)
+        }
+        if (siteOrigin && siteOrigin !== apiOrigin) {
+          lines.push(`    <link rel="dns-prefetch" href="${escapeHtmlAttr(siteOrigin)}" />`)
+          lines.push(`    <link rel="preconnect" href="${escapeHtmlAttr(siteOrigin)}" crossorigin />`)
+        }
+        const prefetchCmsJson = String(viteEnv.VITE_INDEX_PREFETCH_CMS_JSON ?? 'true').toLowerCase() !== 'false'
+        if (prefetchCmsJson) {
+          const pathBase = String(viteEnv.VITE_INDEX_ASSET_BASE ?? viteEnv.VITE_BASE ?? '/').trim() || '/'
+          const b = pathBase.endsWith('/') ? pathBase : `${pathBase}/`
+          const prefetchPath = `${b}cms-prefetch.json`.replace(/\/{2,}/g, '/')
+          lines.push(
+            `    <link rel="prefetch" href="${escapeHtmlAttr(prefetchPath)}" as="fetch" type="application/json" />`,
+          )
+        }
+        if (flagOrigin) {
+          lines.push(`    <link rel="preconnect" href="${escapeHtmlAttr(flagOrigin)}" crossorigin />`)
+          lines.push(`    <link rel="dns-prefetch" href="${escapeHtmlAttr(flagOrigin)}" />`)
+        }
+        const extras = String(viteEnv.VITE_EXTRA_PRECONNECT || '')
+          .split(/[\s,]+/)
+          .map((s) => s.trim())
+          .filter(Boolean)
+        for (const e of extras) {
+          try {
+            const o = new URL(/^[a-z]+:\/\//i.test(e) ? e : `https://${e}`).origin
+            lines.push(`    <link rel="dns-prefetch" href="${escapeHtmlAttr(o)}" />`)
+            lines.push(`    <link rel="preconnect" href="${escapeHtmlAttr(o)}" crossorigin />`)
+          } catch {
+            /* skip invalid */
+          }
+        }
+        lines.push(`    <meta name="theme-color" content="${escapeHtmlAttr(themeColor)}" />`)
+        lines.push(
+          '    <!-- SEO: SPA shell; route-level meta from React. Build injects home meta from CMS when VITE_BUILD_SEO_LOCALE is set. -->',
+        )
+        lines.push(`    <meta name="robots" content="${escapeHtmlAttr(robotsDefault)}" />`)
+        lines.push(`    <meta property="og:type" content="${escapeHtmlAttr(ogType)}" />`)
+        lines.push(`    <meta name="twitter:card" content="${escapeHtmlAttr(twitterCard)}" />`)
+
+        const block = lines.join('\n')
+        const marker = /<!--\s*@vite-index-shell-head@\s*-->/i
+        let out = html
+        if (marker.test(out)) {
+          out = out.replace(marker, block)
+        } else {
+          out = out.replace('<title>', `${block}\n    <title>`)
+        }
+        out = out.replace(/<html\s+lang="[^"]*"/i, `<html lang="${escapeHtmlAttr(htmlLang)}"`)
+        return out
+      },
+    },
+  }
+}
+
 /** Meta URLs in static HTML: site images use the public frontend origin (/uploads → proxied to CMS). */
 function absoluteUrlForBuild(href, apiOrigin, siteOrigin) {
   const s = String(href ?? '').trim()
@@ -413,6 +526,18 @@ function cmsPrefetchPlugin(viteEnv) {
       const paths = ['/home-content', '/faq', '/pages', '/blogs', '/home-cards', '/legal-nav', '/contact']
       const bundle = { revision, locales: {} }
 
+      const prefetchLegalBodies =
+        String(viteEnv.VITE_CMS_PREFETCH_LEGAL ?? 'true').toLowerCase() !== 'false'
+      const detailMode = String(viteEnv.VITE_CMS_PREFETCH_DETAIL || '').trim().toLowerCase()
+      const maxPageDetails = Math.min(
+        200,
+        Math.max(0, Number.parseInt(String(viteEnv.VITE_CMS_PREFETCH_MAX_PAGES ?? '100'), 10) || 100),
+      )
+      const maxBlogDetails = Math.min(
+        200,
+        Math.max(0, Number.parseInt(String(viteEnv.VITE_CMS_PREFETCH_MAX_BLOGS ?? '100'), 10) || 100),
+      )
+
       for (const locale of locales) {
         bundle.locales[locale] = {}
         for (const p of paths) {
@@ -420,6 +545,54 @@ function cmsPrefetchPlugin(viteEnv) {
             bundle.locales[locale][p] = await fetchPublicJson(p, locale)
           } catch (e) {
             console.warn(`[cms-prefetch] ${p} (${locale}): ${e?.message || e}`)
+          }
+        }
+
+        const loc = bundle.locales[locale]
+
+        if (prefetchLegalBodies && loc['/legal-nav']?.legal && typeof loc['/legal-nav'].legal === 'object') {
+          for (const [slug, hasBody] of Object.entries(loc['/legal-nav'].legal)) {
+            if (!hasBody) continue
+            const lp = `/legal/${slug}`
+            if (loc[lp] !== undefined) continue
+            try {
+              loc[lp] = await fetchPublicJson(lp, locale)
+            } catch (e) {
+              console.warn(`[cms-prefetch] ${lp} (${locale}): ${e?.message || e}`)
+            }
+          }
+        }
+
+        if (detailMode === 'pages' || detailMode === 'all') {
+          const pagesRes = loc['/pages']
+          const pageList = Array.isArray(pagesRes?.pages) ? pagesRes.pages : []
+          for (let i = 0; i < Math.min(pageList.length, maxPageDetails); i += 1) {
+            const slug = pageList[i]?.slug
+            if (!slug) continue
+            const pp = `/pages/${encodeURIComponent(String(slug))}`
+            if (loc[pp] !== undefined) continue
+            try {
+              loc[pp] = await fetchPublicJson(pp, locale)
+            } catch (e) {
+              console.warn(`[cms-prefetch] ${pp} (${locale}): ${e?.message || e}`)
+            }
+          }
+        }
+
+        if (detailMode === 'blogs' || detailMode === 'all') {
+          const blogsRes = loc['/blogs']
+          const rawBlogs = blogsRes?.blogs ?? blogsRes?.data ?? blogsRes
+          const blogList = Array.isArray(rawBlogs) ? rawBlogs : []
+          for (let i = 0; i < Math.min(blogList.length, maxBlogDetails); i += 1) {
+            const slug = blogList[i]?.slug
+            if (!slug) continue
+            const bp = `/blogs/${encodeURIComponent(String(slug))}`
+            if (loc[bp] !== undefined) continue
+            try {
+              loc[bp] = await fetchPublicJson(bp, locale)
+            } catch (e) {
+              console.warn(`[cms-prefetch] ${bp} (${locale}): ${e?.message || e}`)
+            }
           }
         }
       }
@@ -438,6 +611,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       faviconCacheBustPlugin(viteEnv),
+      indexShellHeadPlugin(viteEnv),
       cmsSeoInjectPlugin(viteEnv),
       modulepreloadPlugin(),
       fetchSeoStaticPlugin(viteEnv),

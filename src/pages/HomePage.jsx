@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense, startTransition, useMemo } from 'react'
-import { useLocation, useNavigate, useParams, Link } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { defaultLang } from '../i18n/translations'
-import { getFaq, getHomeCards, getBlogs, getHomePageContent, getToolSchemaJsonLd } from '../api/cms'
+import { getFaq, getHomeCards, getHomePageContent, getToolSchemaJsonLd } from '../api/cms'
 import JsonLd from '../components/JsonLd'
 import './HomePage.css'
 import './CmsPage.css'
@@ -92,10 +92,9 @@ function HomePage() {
   const [showBelowFold, setShowBelowFold] = useState(false)
   const [landingFaq, setLandingFaq] = useState([])
   const [landingCards, setLandingCards] = useState([])
-  /** Blog links under landing + compress tool (replaces removed “Other tools”). */
-  const [teaserBlogs, setTeaserBlogs] = useState([])
   /** CMS “Home page” rich text (locale-specific), from public /home-content */
   const [cmsHomeHtml, setCmsHomeHtml] = useState('')
+  const [howSection, setHowSection] = useState(null)
   const [homeJsonLd, setHomeJsonLd] = useState(null)
   const [toolJsonLd, setToolJsonLd] = useState(null)
 
@@ -106,23 +105,10 @@ function HomePage() {
     document.documentElement.lang = lang
   }, [lang])
 
-  /* Home landing: fetch CMS home HTML + blog teasers in parallel (one network wait). Compress page: blogs only. */
+  /* Home landing: fetch CMS home HTML in parallel with main content. */
   useEffect(() => {
-    if (!isHomeLanding && !isCompressPage) return undefined
+    if (!isHomeLanding) return undefined
     let cancelled = false
-    const blogPromise = getBlogs(lang)
-      .then((res) => {
-        if (cancelled) return
-        setTeaserBlogs(Array.isArray(res.blogs) ? res.blogs : [])
-      })
-      .catch(() => {
-        if (!cancelled) setTeaserBlogs([])
-      })
-    if (!isHomeLanding) {
-      return () => {
-        cancelled = true
-      }
-    }
     const homePromise = getHomePageContent(lang)
       .then((res) => {
         if (cancelled) return
@@ -136,11 +122,11 @@ function HomePage() {
           setHomeJsonLd(null)
         }
       })
-    void Promise.all([blogPromise, homePromise])
+    void Promise.all([homePromise])
     return () => {
       cancelled = true
     }
-  }, [isHomeLanding, isCompressPage, lang])
+  }, [isHomeLanding, lang])
 
   useEffect(() => {
     if (!isCompressPage) {
@@ -174,6 +160,13 @@ function HomePage() {
         if (cancelled) return
         setLandingFaq(Array.isArray(faqRes.faq) ? faqRes.faq : [])
         setLandingCards(Array.isArray(cardsRes.cards) ? cardsRes.cards : [])
+        setHowSection(cardsRes?.section && typeof cardsRes.section === 'object' ? cardsRes.section : null)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setLandingFaq([])
+        setLandingCards([])
+        setHowSection(null)
       })
     return () => { cancelled = true }
   }, [showBelowFold, lang])
@@ -583,7 +576,7 @@ function HomePage() {
 
             {showBelowFold && (
               <Suspense fallback={null}>
-                <LandingBelowFold t={t} cards={landingCards} />
+                <LandingBelowFold t={t} cards={landingCards} howSection={howSection} />
               </Suspense>
             )}
           </>
@@ -837,24 +830,6 @@ function HomePage() {
           <div className="message message--error" role="alert">
             {error}
           </div>
-        )}
-
-        {teaserBlogs.length > 0 && (isHomeLanding || (isCompressPage && step === STEP_SETTINGS)) && (
-          <section className="blog-teaser" aria-label={t('fromTheBlog')}>
-            <h2 className="blog-teaser-title">{t('fromTheBlog')}</h2>
-            <ul className="blog-teaser-list">
-              {teaserBlogs.slice(0, 6).map((post) => (
-                <li key={post.id ?? post.slug}>
-                  <Link to={`/${lang}/blog/${post.slug}`} className="blog-teaser-link">
-                    {post.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <Link to={`/${lang}/blog`} className="blog-teaser-all">
-              {t('viewAllPosts')} →
-            </Link>
-          </section>
         )}
 
         {showBelowFold && !isCompressPage && faqItems.length > 0 && (

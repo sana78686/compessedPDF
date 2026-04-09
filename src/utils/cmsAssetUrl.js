@@ -98,6 +98,9 @@ export function resolveCmsMediaUrl(url) {
   if (path.startsWith('/uploads/')) {
     return origin ? `${origin}${path}` : path
   }
+  if (path.startsWith('/cms-uploads/')) {
+    return origin ? `${origin}${path}` : path
+  }
   if (path.startsWith('/storage/')) {
     const inner = path.replace(/^\/storage\//, '').replace(/^\/+/, '')
     if (USE_LEGACY_CMS_MEDIA_PROXY) {
@@ -121,7 +124,7 @@ export function resolveCmsMediaUrl(url) {
 export function absolutizeCmsHtml(html) {
   if (!html || typeof html !== 'string') return html
   return html.replace(
-    /\b(src|href)=(["'])((?:https?:\/\/[^"']+)?\/(?:storage|media)\/[^"']+)\2/gi,
+    /\b(src|href)=(["'])((?:https?:\/\/[^"']+)?\/(?:storage|media|cms-uploads)\/[^"']+)\2/gi,
     (_, attr, q, urlPart) => {
       const resolved = resolveCmsMediaUrl(urlPart)
       return `${attr}=${q}${resolved}${q}`
