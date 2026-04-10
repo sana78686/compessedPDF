@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { getBlogs } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
-import { getPreferredLang, supportedLangs, langToOgLocale } from '../i18n/translations'
+import { getPreferredLang, supportedLangs, langToOgLocale, langPrefix } from '../i18n/translations'
+import { useLang } from '../hooks/useLang'
 import { resolveCmsMediaUrl } from '../utils/cmsAssetUrl'
 import './BlogListPage.css'
 
@@ -19,9 +20,6 @@ function formatDate(iso) {
 function BlogCardCover({ src, title }) {
   const [broken, setBroken] = useState(false)
   const url = src ? resolveCmsMediaUrl(src) : ''
-  // #region agent log
-  fetch('http://127.0.0.1:7923/ingest/adc12192-b7f9-4d03-95de-e6d1ef0803f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'adc45b'},body:JSON.stringify({sessionId:'adc45b',location:'BlogListPage.jsx:BlogCardCover',message:'Blog card image',data:{rawSrc:src,resolvedUrl:url,broken,title},timestamp:Date.now(),hypothesisId:'A,E'})}).catch(()=>{});
-  // #endregion
   if (!url || broken) {
     return <div className="blog-card-image-placeholder" aria-hidden="true" />
   }
@@ -33,15 +31,15 @@ function BlogCardCover({ src, title }) {
       loading="lazy"
       decoding="async"
       referrerPolicy="no-referrer"
-      onError={() => { fetch('http://127.0.0.1:7923/ingest/adc12192-b7f9-4d03-95de-e6d1ef0803f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'adc45b'},body:JSON.stringify({sessionId:'adc45b',location:'BlogListPage.jsx:img-onError',message:'Card image load failed',data:{src:url,title},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{}); setBroken(true); }}
+      onError={() => setBroken(true)}
     />
   )
 }
 
 export default function BlogListPage() {
-  const { lang } = useParams()
+  const lang = useLang()
   const t = useTranslation(lang)
-  const langPrefix = supportedLangs.includes(lang) ? lang : getPreferredLang()
+  const localeForApi = supportedLangs.includes(lang) ? lang : getPreferredLang()
   const [blogs, setBlogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -52,11 +50,11 @@ export default function BlogListPage() {
   }, [lang])
 
   useEffect(() => {
-    getBlogs(langPrefix)
+    getBlogs(localeForApi)
       .then((res) => setBlogs(res.blogs || []))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [langPrefix])
+  }, [localeForApi])
 
   if (loading) {
     return (
@@ -79,7 +77,7 @@ export default function BlogListPage() {
           ogLocale={langToOgLocale(lang)}
         />
         <p className="blog-list-error">{error}</p>
-        <Link to={`/${langPrefix}`} className="blog-list-back">← {t('blog.backHome')}</Link>
+        <Link to={`${langPrefix(lang)}/`} className="blog-list-back">← {t('blog.backHome')}</Link>
       </div>
     )
   }
@@ -108,7 +106,7 @@ export default function BlogListPage() {
           {blogs.map((post) => (
             <Link
               key={post.id}
-              to={`/${langPrefix}/blog/${post.slug}`}
+              to={`${langPrefix(lang)}/blog/${post.slug}`}
               className="blog-card"
             >
               <div className="blog-card-image-wrap">
@@ -131,7 +129,7 @@ export default function BlogListPage() {
         </div>
       )}
       <footer className="blog-list-footer">
-        <Link to={`/${langPrefix}`} className="blog-list-back">← {t('blog.backHome')}</Link>
+        <Link to={`${langPrefix(lang)}/`} className="blog-list-back">← {t('blog.backHome')}</Link>
       </footer>
     </article>
   )

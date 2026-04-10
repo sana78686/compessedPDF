@@ -1,13 +1,12 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route, Navigate, useParams, Outlet } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams, useLocation, Outlet } from 'react-router-dom'
 import SiteLayout from './components/SiteLayout'
 import HomePage from './pages/HomePage'
 import DynamicSeoHead from './components/DynamicSeoHead'
 import HreflangLinks from './components/HreflangLinks'
-import { supportedLangs, getPreferredLang } from './i18n/translations'
+import { supportedLangs, defaultLang, getPreferredLang } from './i18n/translations'
 import GeoLangRedirect from './components/GeoLangRedirect'
 
-/* Route-level code splitting: keep initial bundle small for LCP/TBT (Lighthouse Performance) */
 const AllToolsPage = lazy(() => import('./pages/AllToolsPage'))
 const ComingSoonPage = lazy(() => import('./pages/ComingSoonPage'))
 const CmsPage = lazy(() => import('./pages/CmsPage'))
@@ -18,8 +17,14 @@ const LegalContentPage = lazy(() => import('./pages/LegalContentPage'))
 
 function LangGuard({ children }) {
   const { lang } = useParams()
+  const location = useLocation()
+  if (lang === defaultLang) {
+    const rest = location.pathname.replace(/^\/[a-z]{2}\/?/, '/').replace(/\/+$/, '') || '/'
+    return <Navigate to={rest + location.search} replace />
+  }
   if (!lang || !supportedLangs.includes(lang)) {
-    return <Navigate to={`/${getPreferredLang()}`} replace />
+    const pref = getPreferredLang()
+    return <Navigate to={pref === defaultLang ? '/' : `/${pref}`} replace />
   }
   return children
 }
@@ -48,7 +53,7 @@ function App() {
       <DynamicSeoHead />
       <HreflangLinks />
       <Routes>
-        <Route path="/" element={<GeoLangRedirect />} />
+        {/* Non-default locale (e.g. /en/...) — LangGuard redirects /id/... → /... */}
         <Route element={<LangGuard><SiteLayoutWrapper /></LangGuard>}>
           <Route path="/:lang/tools" element={<AllToolsPage />} />
           <Route path="/:lang/compress/result" element={<HomePage />} />
@@ -61,6 +66,20 @@ function App() {
           <Route path="/:lang/:tool" element={<ComingSoonPage />} />
           <Route path="/:lang" element={<HomePage />} />
         </Route>
+
+        {/* Default locale (id) — no prefix in URL */}
+        <Route element={<SiteLayoutWrapper />}>
+          <Route path="/tools" element={<AllToolsPage />} />
+          <Route path="/compress/result" element={<HomePage />} />
+          <Route path="/compress" element={<HomePage />} />
+          <Route path="/page/:slug" element={<CmsPage />} />
+          <Route path="/blog/:slug" element={<CmsBlog />} />
+          <Route path="/blog" element={<BlogListPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/legal/:slug" element={<LegalContentPage />} />
+          <Route path="/" element={<HomePage />} />
+        </Route>
+
         <Route path="*" element={<GeoLangRedirect />} />
       </Routes>
     </>

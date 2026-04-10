@@ -341,32 +341,15 @@ function cmsSeoInjectPlugin(viteEnv) {
               : ''
           const injectSnippetBuild = headSnippet ? `\n${headSnippet}\n` : ''
 
-          // Update <title> and the existing robots meta in-place (avoid duplicates)
+          // Only inject site-wide assets (GA + head snippet) — NOT page-specific
+          // SEO meta. React's SeoHead component sets title, description, robots,
+          // canonical, OG, and twitter tags per route at runtime, so baking home
+          // values here would mislead crawlers that visit non-home pages.
           let out = html
-            .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
-            .replace(
-              /<meta name="robots" content="[^"]*" \/>/,
-              `<meta name="robots" content="${esc(robots)}" />`,
-            )
-
-          // Inject remaining tags before </head>
-          const tags = [
-            title && `    <meta name="title" content="${esc(title)}" />`,
-            desc && `    <meta name="description" content="${esc(desc)}" />`,
-            keywords && `    <meta name="keywords" content="${esc(keywords)}" />`,
-            canonical && `    <link rel="canonical" href="${esc(canonical)}" />`,
-            ogTitle && `    <meta property="og:title" content="${esc(ogTitle)}" />`,
-            ogDesc && `    <meta property="og:description" content="${esc(ogDesc)}" />`,
-            ogImage && `    <meta property="og:image" content="${esc(ogImage)}" />`,
-            SITE_NAME && `    <meta property="og:site_name" content="${esc(SITE_NAME)}" />`,
-            ogTitle && `    <meta name="twitter:title" content="${esc(ogTitle)}" />`,
-            ogDesc && `    <meta name="twitter:description" content="${esc(ogDesc)}" />`,
-            ogImage && `    <meta name="twitter:image" content="${esc(ogImage)}" />`,
-          ].filter(Boolean).join('\n')
 
           out = out.replace(
             '</head>',
-            `${tags}${injectSnippetBuild}${injectGaBuild}\n  </head>`,
+            `${injectSnippetBuild}${injectGaBuild}\n  </head>`,
           )
           console.log('[cms-seo-inject] Home SEO + head snippet injected from CMS ✓')
           return out

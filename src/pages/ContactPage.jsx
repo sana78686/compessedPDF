@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { getContactSettings, submitContactForm } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
-import { getPreferredLang, supportedLangs, langToOgLocale } from '../i18n/translations'
+import { getPreferredLang, supportedLangs, langToOgLocale, langPrefix } from '../i18n/translations'
+import { useLang } from '../hooks/useLang'
 import './ContactPage.css'
 
 export default function ContactPage() {
-  const { lang } = useParams()
+  const lang = useLang()
   const t = useTranslation(lang)
-  const langPrefix = supportedLangs.includes(lang) ? lang : getPreferredLang()
+  const localeForApi = supportedLangs.includes(lang) ? lang : getPreferredLang()
   const [settings, setSettings] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -33,11 +34,11 @@ export default function ContactPage() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    getContactSettings(langPrefix)
+    getContactSettings(localeForApi)
       .then(setSettings)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [langPrefix])
+  }, [localeForApi])
 
   const subjectOptions = [
     { value: '', label: t('contact.chooseSubject') },
@@ -88,7 +89,7 @@ export default function ContactPage() {
           message,
           accepts_terms: true,
         },
-        langPrefix
+        localeForApi
       )
       setSentSummary({ name, email, subject: subjectText, message })
       setSubmitSuccess(true)
@@ -115,7 +116,7 @@ export default function ContactPage() {
       <div className="contact-page wrap">
         <SeoHead title={t('contact.title')} robots="index,follow" />
         <p className="contact-page-error">{error}</p>
-        <Link to={`/${langPrefix}`} className="contact-page-back">← {t('contact.backHome')}</Link>
+        <Link to={`${langPrefix(lang)}/`} className="contact-page-back">← {t('contact.backHome')}</Link>
       </div>
     )
   }
@@ -287,11 +288,11 @@ export default function ContactPage() {
                   />
                   <span>
                     {t('contact.iAccept')}{' '}
-                    <Link to={`/${langPrefix}/legal/terms`} className="contact-form-legal-link">
+                    <Link to={`${langPrefix(lang)}/legal/terms`} className="contact-form-legal-link">
                       {t('contact.termsAndConditions')}
                     </Link>
                     {' and '}
-                    <Link to={`/${langPrefix}/legal/privacy-policy`} className="contact-form-legal-link">
+                    <Link to={`${langPrefix(lang)}/legal/privacy-policy`} className="contact-form-legal-link">
                       {t('contact.legalPrivacy')}
                     </Link>
                   </span>
@@ -314,7 +315,7 @@ export default function ContactPage() {
         </div>
       </div>
       <footer className="contact-page-footer">
-        <Link to={`/${langPrefix}`} className="contact-page-back">← {t('contact.backHome')}</Link>
+        <Link to={`${langPrefix(lang)}/`} className="contact-page-back">← {t('contact.backHome')}</Link>
       </footer>
     </article>
   )

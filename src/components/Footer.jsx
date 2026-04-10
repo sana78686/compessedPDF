@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { supportedLangs, langOptions, defaultLang, writeUserLocalePreference } from '../i18n/translations'
+import { supportedLangs, langOptions, defaultLang, langPrefix as lp, writeUserLocalePreference } from '../i18n/translations'
 import LangFlag from './LangFlag'
 import { ucWords } from '../utils/ucWords'
 import './Footer.css'
 
-/** Stable order for /legal/{slug} links (matches CMS slugs). */
 const LEGAL_SLUG_ORDER = ['terms', 'privacy-policy', 'disclaimer', 'about-us', 'cookie-policy']
 
 const LEGAL_LABEL_KEY = {
@@ -15,7 +14,16 @@ const LEGAL_LABEL_KEY = {
   'cookie-policy': 'footerCookies',
 }
 
-/** CMS pages: only placement footer or both appear under OTHER. */
+function buildLangSwitchHref(pathname, currentLang, targetLang) {
+  let suffix = pathname || '/'
+  if (currentLang !== defaultLang) {
+    suffix = suffix.replace(new RegExp(`^/${currentLang}(/|$)`), '$1') || '/'
+  }
+  if (!suffix.startsWith('/')) suffix = '/' + suffix
+  if (targetLang === defaultLang) return suffix
+  return `/${targetLang}${suffix === '/' ? '' : suffix}`
+}
+
 export default function Footer({
   lang,
   pathname,
@@ -44,7 +52,8 @@ export default function Footer({
     }
   }, [langOpen])
 
-  const langPrefix = supportedLangs.includes(lang) ? lang : defaultLang
+  const effectiveLang = supportedLangs.includes(lang) ? lang : defaultLang
+  const prefix = lp(effectiveLang)
 
   return (
     <footer className="footer footer--dark">
@@ -53,17 +62,17 @@ export default function Footer({
           <div className="footer-columns">
             <div className="footer-col">
               <h3 className="footer-col-title">{t('footerCompany')}</h3>
-              <a href={`/${langPrefix}/blog`}>{t('footerBlog')}</a>
-              <a href={`/${langPrefix}/contact`}>{t('footerContact')}</a>
+              <a href={`${prefix}/blog`}>{t('footerBlog')}</a>
+              <a href={`${prefix}/contact`}>{t('footerContact')}</a>
               {showFaqLink && (
-                <a href={`/${langPrefix}#landing-faq`}>{t('footerFaq')}</a>
+                <a href={`${prefix}/#landing-faq`}>{t('footerFaq')}</a>
               )}
             </div>
             {cmsFooterLinks.length > 0 && (
               <div className="footer-col">
                 <h3 className="footer-col-title">{t('footerOther')}</h3>
                 {cmsFooterLinks.map((p) => (
-                  <a key={p.id} href={`/${langPrefix}/page/${p.slug}`}>
+                  <a key={p.id} href={`${prefix}/page/${p.slug}`}>
                     {ucWords(p.title)}
                   </a>
                 ))}
@@ -73,7 +82,7 @@ export default function Footer({
               <div className="footer-col">
                 <h3 className="footer-col-title">{t('footerLegal')}</h3>
                 {legalLinksToShow.map((slug) => (
-                  <a key={slug} href={`/${langPrefix}/legal/${slug}`}>
+                  <a key={slug} href={`${prefix}/legal/${slug}`}>
                     {t(LEGAL_LABEL_KEY[slug])}
                   </a>
                 ))}
@@ -95,9 +104,9 @@ export default function Footer({
               aria-label="Select language"
             >
               <span className="footer-lang-icon" aria-hidden>
-                <LangFlag lang={langPrefix} width={20} />
+                <LangFlag lang={effectiveLang} width={20} />
               </span>
-              <span>{langOptions[langPrefix]?.label || t('footerLanguage')}</span>
+              <span>{langOptions[effectiveLang]?.label || t('footerLanguage')}</span>
               <span className="footer-lang-chevron" aria-hidden>▼</span>
             </button>
             {langOpen && (
@@ -105,7 +114,7 @@ export default function Footer({
                 {supportedLangs.map((l) => (
                   <li key={l} role="option">
                     <a
-                      href={pathname ? pathname.replace(new RegExp(`^/${langPrefix}(/|$)`), `/${l}$1`) : `/${l}`}
+                      href={buildLangSwitchHref(pathname, effectiveLang, l)}
                       className="footer-lang-item"
                       onClick={() => writeUserLocalePreference(l)}
                     >

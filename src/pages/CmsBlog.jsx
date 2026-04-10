@@ -4,7 +4,8 @@ import { getBlogBySlug } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
 import JsonLd from '../components/JsonLd'
 import { useTranslation } from '../i18n/useTranslation'
-import { getPreferredLang, supportedLangs, langToOgLocale } from '../i18n/translations'
+import { getPreferredLang, supportedLangs, langToOgLocale, langPrefix } from '../i18n/translations'
+import { useLang } from '../hooks/useLang'
 import { buildHreflangAlternates } from '../utils/seoHreflang'
 import { absolutizeCmsHtml, resolveCmsMediaUrl } from '../utils/cmsAssetUrl'
 import './CmsPage.css'
@@ -39,7 +40,8 @@ function plainText(html) {
 }
 
 export default function CmsBlog() {
-  const { lang, slug } = useParams()
+  const { slug } = useParams()
+  const lang = useLang()
   const navigate = useNavigate()
   const t = useTranslation(lang)
   const [data, setData] = useState(null)
@@ -64,7 +66,7 @@ export default function CmsBlog() {
   useEffect(() => {
     const redir = data?._seo_redirect
     if (!redir?.locale || !redir?.slug) return
-    navigate(`/${redir.locale}/blog/${encodeURIComponent(redir.slug)}`, { replace: true })
+    navigate(`${langPrefix(redir.locale)}/blog/${encodeURIComponent(redir.slug)}`, { replace: true })
   }, [data, navigate])
 
   const alternateLocalesKey = Array.isArray(data?.alternate_locales)
@@ -77,7 +79,7 @@ export default function CmsBlog() {
     return alt.length ? alt : null
   }, [data, error, slug, alternateLocalesKey])
 
-  const langPrefix = supportedLangs.includes(lang) ? lang : getPreferredLang()
+  const lp = supportedLangs.includes(lang) ? lang : getPreferredLang()
 
   if (loading) {
     return (
@@ -101,7 +103,7 @@ export default function CmsBlog() {
       <div className="cms-page wrap">
         <SeoHead title="" />
         <p className="cms-page-error">{error || 'Post not found.'}</p>
-        <Link to={`/${langPrefix}`} className="cms-page-back">← Back to home</Link>
+        <Link to={`${langPrefix(lp)}/`} className="cms-page-back">← Back to home</Link>
       </div>
     )
   }
@@ -109,9 +111,6 @@ export default function CmsBlog() {
   const heroResolved = resolveCmsMediaUrl(data.og_image || data.image)
   const ogImageResolved = data.og_image ? resolveCmsMediaUrl(data.og_image) : ''
   const authorName = data.author?.name
-  // #region agent log
-  fetch('http://127.0.0.1:7923/ingest/adc12192-b7f9-4d03-95de-e6d1ef0803f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'adc45b'},body:JSON.stringify({sessionId:'adc45b',location:'CmsBlog.jsx:112',message:'Blog image data',data:{slug:data.slug,og_image:data.og_image,image:data.image,heroResolved,ogImageResolved,heroBroken},timestamp:Date.now(),hypothesisId:'A,B,C'})}).catch(()=>{});
-  // #endregion
   const fallbackTitle = String(data?.title || '').trim()
   const fallbackDescription = (
     String(data?.meta_description || '').trim() ||
@@ -173,7 +172,7 @@ export default function CmsBlog() {
               loading="eager"
               decoding="async"
               referrerPolicy="no-referrer"
-              onError={(e) => { fetch('http://127.0.0.1:7923/ingest/adc12192-b7f9-4d03-95de-e6d1ef0803f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'adc45b'},body:JSON.stringify({sessionId:'adc45b',location:'CmsBlog.jsx:img-onError',message:'Hero image load failed',data:{src:heroResolved,naturalWidth:e.target?.naturalWidth},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{}); setHeroBroken(true); }}
+              onError={() => setHeroBroken(true)}
             />
           </div>
         ) : (
@@ -187,11 +186,11 @@ export default function CmsBlog() {
         dangerouslySetInnerHTML={{ __html: absolutizeCmsHtml(data.content || '') }}
       />
       <footer className="cms-page-footer">
-        <Link to={`/${langPrefix}/blog`} className="cms-page-back">
+        <Link to={`${langPrefix(lang)}/blog`} className="cms-page-back">
           ← {t('blog.backToBlog')}
         </Link>
         <span className="cms-page-footer-sep"> · </span>
-        <Link to={`/${langPrefix}`} className="cms-page-back">
+        <Link to={`${langPrefix(lang)}/`} className="cms-page-back">
           {t('blog.backHome')}
         </Link>
       </footer>

@@ -1,10 +1,7 @@
 import { Navigate } from 'react-router-dom'
-import { getPreferredLang } from '../i18n/translations'
+import { defaultLang, getPreferredLang } from '../i18n/translations'
 
-/**
- * `/` → `/{lang}/…` using saved preference or default Indonesian (no geo/IP — instant).
- */
 export default function GeoLangRedirect() {
   const lang = getPreferredLang()
-  return <Navigate to={`/${lang}`} replace />
+  return <Navigate to={lang === defaultLang ? '/' : `/${lang}`} replace />
 }

@@ -1,4 +1,5 @@
 import { CONVERT_TO_PDF, CONVERT_FROM_PDF } from '../config/convertMenu'
+import { langPrefix } from '../i18n/translations'
 import { ucWords } from '../utils/ucWords'
 import './ConvertMegaMenu.css'
 
@@ -88,8 +89,7 @@ function getIcon(slug) {
 
 export default function ConvertMegaMenu({ lang, t, isOpen, onClose }) {
   if (!isOpen) return null
-
-  const getHref = (slug) => `/${lang}/${slug}`
+  const getHref = (slug) => `${langPrefix(lang)}/${slug}`
 
   return (
     <div className="convert-mega-panel" role="dialog" aria-label="Convert PDF options">

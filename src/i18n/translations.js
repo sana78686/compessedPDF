@@ -431,7 +431,12 @@ export const translations = {
 /** Public site default until the visitor picks another language (stored in localStorage). */
 export const defaultLang = 'id'
 
-export const supportedLangs = ['id', 'en', 'ms', 'es', 'fr', 'ar', 'ru']
+export const supportedLangs = ['id', 'en']
+
+/** URL prefix for a language: empty for default (id), '/en' for English, etc. */
+export function langPrefix(lang) {
+  return lang === defaultLang ? '' : `/${lang}`
+}
 
 const OG_LOCALE_MAP = {
   id: 'id_ID',

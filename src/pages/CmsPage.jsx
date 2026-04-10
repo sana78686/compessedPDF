@@ -3,7 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getPageBySlug } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
 import JsonLd from '../components/JsonLd'
-import { getPreferredLang, supportedLangs, langToOgLocale } from '../i18n/translations'
+import { getPreferredLang, supportedLangs, langToOgLocale, langPrefix } from '../i18n/translations'
+import { useLang } from '../hooks/useLang'
 import { buildHreflangAlternates } from '../utils/seoHreflang'
 import { absolutizeCmsHtml } from '../utils/cmsAssetUrl'
 import './CmsPage.css'
@@ -14,7 +15,8 @@ function plainText(html) {
 }
 
 export default function CmsPage() {
-  const { lang, slug } = useParams()
+  const { slug } = useParams()
+  const lang = useLang()
   const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -33,7 +35,7 @@ export default function CmsPage() {
   useEffect(() => {
     const redir = data?._seo_redirect
     if (!redir?.locale || !redir?.slug) return
-    navigate(`/${redir.locale}/page/${encodeURIComponent(redir.slug)}`, { replace: true })
+    navigate(`${langPrefix(redir.locale)}/page/${encodeURIComponent(redir.slug)}`, { replace: true })
   }, [data, navigate])
 
   const alternateLocalesKey = Array.isArray(data?.alternate_locales)
@@ -46,7 +48,7 @@ export default function CmsPage() {
     return alt.length ? alt : null
   }, [data, error, slug, alternateLocalesKey])
 
-  const langPrefix = supportedLangs.includes(lang) ? lang : getPreferredLang()
+  const lp = supportedLangs.includes(lang) ? lang : getPreferredLang()
   const fallbackTitle = String(data?.title || '').trim()
   const fallbackDescription = plainText(data?.content).slice(0, 160)
 
@@ -72,7 +74,7 @@ export default function CmsPage() {
       <div className="cms-page wrap">
         <SeoHead title="" />
         <p className="cms-page-error">{error || 'Page not found.'}</p>
-        <Link to={`/${langPrefix}`} className="cms-page-back">← Back to home</Link>
+        <Link to={`${langPrefix(lp)}/`} className="cms-page-back">← Back to home</Link>
       </div>
     )
   }
@@ -94,7 +96,7 @@ export default function CmsPage() {
         />
         <header className="cms-page-header">
           <nav className="cms-page-breadcrumb" aria-label="Breadcrumb">
-            <Link to={`/${langPrefix}`}>Home</Link>
+            <Link to={`${langPrefix(lang)}/`}>Home</Link>
             <span aria-hidden="true"> / </span>
             <span>{data.title}</span>
           </nav>
@@ -105,7 +107,7 @@ export default function CmsPage() {
           dangerouslySetInnerHTML={{ __html: absolutizeCmsHtml(data.content || '') }}
         />
         <footer className="cms-page-footer">
-          <Link to={`/${langPrefix}`} className="cms-page-back">
+          <Link to={`${langPrefix(lang)}/`} className="cms-page-back">
             ← Back to home
           </Link>
         </footer>

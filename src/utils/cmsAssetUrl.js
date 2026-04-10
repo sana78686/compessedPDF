@@ -75,6 +75,9 @@ export function resolveCmsMediaUrl(url) {
     try {
       const u = new URL(s.startsWith('//') ? `https:${s}` : s)
       if (origin && u.origin === new URL(origin).origin) {
+        if (u.pathname.startsWith('/uploads/') || u.pathname.startsWith('/cms-uploads/')) {
+          return publicMediaProxyUrl(u.pathname.replace(/^\/+/, ''))
+        }
         return u.pathname + (u.search || '')
       }
     } catch {
@@ -105,7 +108,7 @@ export function resolveCmsMediaUrl(url) {
 
   const path = s.startsWith('/') ? s : `/${s}`
   if (path.startsWith('/uploads/')) {
-    return origin ? `${origin}${path}` : path
+    return publicMediaProxyUrl(path.replace(/^\/+/, ''))
   }
   if (path.startsWith('/cms-uploads/')) {
     const relCms = path.replace(/^\/+/, '')
@@ -134,7 +137,7 @@ export function resolveCmsMediaUrl(url) {
 export function absolutizeCmsHtml(html) {
   if (!html || typeof html !== 'string') return html
   return html.replace(
-    /\b(src|href)=(["'])((?:https?:\/\/[^"']+)?\/(?:storage|media|cms-uploads)\/[^"']+)\2/gi,
+    /\b(src|href)=(["'])((?:https?:\/\/[^"']+)?\/(?:storage|uploads|media|cms-uploads)\/[^"']+)\2/gi,
     (_, attr, q, urlPart) => {
       const resolved = resolveCmsMediaUrl(urlPart)
       return `${attr}=${q}${resolved}${q}`

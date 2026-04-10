@@ -10,7 +10,7 @@ const useDomainInApiPath = import.meta.env.VITE_API_DOMAIN_PATH !== 'false'
 /** Client-side cache TTL for public GET (ms). Same-tab revisits + navigations feel instant. */
 const CMS_CACHE_TTL_MS = Math.max(
   0,
-  Number.parseInt(String(import.meta.env.VITE_CMS_CACHE_MS ?? '120000'), 10) || 120000,
+  Number.parseInt(String(import.meta.env.VITE_CMS_CACHE_MS ?? '60000'), 10) || 60000,
 )
 
 /** Persist GET responses in sessionStorage (survives full reload in the same tab). */
@@ -263,6 +263,42 @@ export async function prepareCmsClient() {
   } catch {
     /* offline / API error — keep existing cache */
   }
+}
+
+const REVISION_POLL_MS = 60_000
+let _revisionPollTimer = null
+
+/**
+ * Poll /content-revision periodically; flush client cache when CMS publishes new content.
+ * Runs every 60s while the tab is visible, pauses when hidden.
+ */
+export function startRevisionPolling() {
+  if (typeof window === 'undefined' || _revisionPollTimer) return
+  const poll = async () => {
+    try {
+      const host = resolveSiteDomainForApi()
+      const remote = await fetchPublicJsonUncached('/content-revision', undefined, host)
+      const rev = Number(remote?.revision ?? 0)
+      let stored = 0
+      try {
+        stored = Number.parseInt(window.localStorage.getItem(REVISION_STORAGE_KEY) || '0', 10) || 0
+      } catch { /* ignore */ }
+      if (rev > stored) {
+        clearCmsApiCache()
+        try { window.localStorage.setItem(REVISION_STORAGE_KEY, String(rev)) } catch { /* quota */ }
+      }
+    } catch { /* offline */ }
+  }
+  _revisionPollTimer = setInterval(poll, REVISION_POLL_MS)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      clearInterval(_revisionPollTimer)
+      _revisionPollTimer = null
+    } else {
+      poll()
+      _revisionPollTimer = setInterval(poll, REVISION_POLL_MS)
+    }
+  })
 }
 
 async function uncachedRequest(path, options, host) {

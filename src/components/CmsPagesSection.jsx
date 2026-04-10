@@ -1,21 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { getPages, getBlogs } from '../api/cms'
-import { supportedLangs, defaultLang } from '../i18n/translations'
+import { langPrefix } from '../i18n/translations'
+import { useLang } from '../hooks/useLang'
 
 export function CmsPagesSection() {
-  const { lang } = useParams()
+  const lang = useLang()
   const [pages, setPages] = useState([])
   const [blogs, setBlogs] = useState([])
   const [loaded, setLoaded] = useState(false)
 
-  const langPrefix = supportedLangs.includes(lang) ? lang : defaultLang
-
   useEffect(() => {
     let cancelled = false
     Promise.all([
-      getPages(langPrefix).catch(() => ({ pages: [] })),
-      getBlogs(langPrefix).catch(() => ({ blogs: [] })),
+      getPages(lang).catch(() => ({ pages: [] })),
+      getBlogs(lang).catch(() => ({ blogs: [] })),
     ])
       .then(([pagesRes, blogsRes]) => {
         if (cancelled) return
@@ -26,7 +25,7 @@ export function CmsPagesSection() {
       .catch(() => setLoaded(true))
 
     return () => { cancelled = true }
-  }, [langPrefix])
+  }, [lang])
 
   if (!loaded || (pages.length === 0 && blogs.length === 0)) return null
 
@@ -39,7 +38,7 @@ export function CmsPagesSection() {
             <ul className="cms-pages-list">
               {pages.map((p) => (
                 <li key={p.id}>
-                  <Link to={`/${langPrefix}/page/${p.slug}`}>{p.title}</Link>
+                  <Link to={`${langPrefix(lang)}/page/${p.slug}`}>{p.title}</Link>
                 </li>
               ))}
             </ul>
@@ -51,7 +50,7 @@ export function CmsPagesSection() {
             <ul className="cms-pages-list">
               {blogs.map((b) => (
                 <li key={b.id}>
-                  <Link to={`/${langPrefix}/blog/${b.slug}`}>{b.title}</Link>
+                  <Link to={`${langPrefix(lang)}/blog/${b.slug}`}>{b.title}</Link>
                 </li>
               ))}
             </ul>

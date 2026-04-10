@@ -41,7 +41,7 @@ export default function DynamicSeoHead() {
   const location = useLocation()
 
   const pathMatch = location.pathname.match(/^\/([a-z]{2})(\/|$)/)
-  const locale = pathMatch?.[1] || defaultLang
+  const locale = (pathMatch?.[1] && ['id', 'en'].includes(pathMatch[1])) ? pathMatch[1] : defaultLang
   const isHomeRoute = isCmsHomeSeoRoute(location.pathname)
 
   useEffect(() => {

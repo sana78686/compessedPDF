@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { getLegalPage } from '../api/cms'
 import { SeoHead } from '../components/SeoHead'
 import { absolutizeCmsHtml } from '../utils/cmsAssetUrl'
-import { getPreferredLang, supportedLangs, langToOgLocale } from '../i18n/translations'
+import { getPreferredLang, supportedLangs, langToOgLocale, langPrefix } from '../i18n/translations'
+import { useLang } from '../hooks/useLang'
 import './CmsPage.css'
 
 const VALID_SLUGS = ['terms', 'privacy-policy', 'disclaimer', 'about-us', 'cookie-policy']
@@ -14,7 +15,8 @@ function plainText(html) {
 }
 
 export default function LegalContentPage() {
-  const { lang, slug } = useParams()
+  const { slug } = useParams()
+  const lang = useLang()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -33,7 +35,7 @@ export default function LegalContentPage() {
       .finally(() => setLoading(false))
   }, [slug, lang])
 
-  const langPrefix = supportedLangs.includes(lang) ? lang : getPreferredLang()
+  const lp = supportedLangs.includes(lang) ? lang : getPreferredLang()
 
   if (loading) {
     return (
@@ -49,7 +51,7 @@ export default function LegalContentPage() {
       <div className="cms-page wrap">
         <SeoHead title="" />
         <p className="cms-page-error">{error || 'Page not found.'}</p>
-        <Link to={`/${langPrefix}`} className="cms-page-back">← Back to home</Link>
+        <Link to={`${langPrefix(lp)}/`} className="cms-page-back">← Back to home</Link>
       </div>
     )
   }
@@ -72,7 +74,7 @@ export default function LegalContentPage() {
         dangerouslySetInnerHTML={{ __html: absolutizeCmsHtml(data.content || '') }}
       />
       <footer className="cms-page-footer">
-        <Link to={`/${langPrefix}`} className="cms-page-back">
+        <Link to={`${langPrefix(lang)}/`} className="cms-page-back">
           ← Back to home
         </Link>
       </footer>

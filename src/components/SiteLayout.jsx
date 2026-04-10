@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, lazy, Suspense, useMemo } from 'react'
-import { useParams, useLocation, Link } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
-import { supportedLangs, langOptions, defaultLang, writeUserLocalePreference } from '../i18n/translations'
+import { supportedLangs, langOptions, defaultLang, langPrefix, writeUserLocalePreference } from '../i18n/translations'
 import { langShortLabel } from '../i18n/langMeta'
+import { useLang } from '../hooks/useLang'
 import { getPages, getLegalNav, getFaq } from '../api/cms'
 import BrandLogo from './BrandLogo'
 import { COMPRESS_PDF_EN } from '../constants/brand'
@@ -23,30 +24,24 @@ function faqListHasContent(res) {
   })
 }
 
-/* Lazy-load footer for faster LCP */
 const Footer = lazy(() => import('./Footer'))
 
-/*
- * Header nav intentionally minimal: logo (home) + language only.
- * Previously: Compress PDF link, All tools mega menu, Login, tools grid icon.
- * Uncomment the block below to restore those controls.
- *
- * import { PORTAL_LOGIN_URL, PORTAL_DASHBOARD_URL } from '../config/portal'
- * import { ucWords } from '../utils/ucWords'
- * const MegaMenu = lazy(() => import('./MegaMenu'))
- * const PORTAL_SESSION_COOKIE = 'compressedpdf_portal_session'
- *
- * Inside component: mega menu state/refs/effects, portal cookie check, then:
- * <nav className="nav" aria-label="Main navigation">
- *   <a href={`/${lang}`}>{ucWords(t('nav.compress'))}</a>
- *   <div className="nav-mega-wrap" ref={megaMenuRef}> ... All tools button + MegaMenu panel ... </div>
- * </nav>
- * {isPortalLoggedIn ? <a href={PORTAL_DASHBOARD_URL}>...</a> : <a href={PORTAL_LOGIN_URL}>...</a>}
- * <a href={`/${lang}/tools`} className="icon-more-tools">...</a>
+/**
+ * Build the URL for switching to language `target` from the current pathname.
+ * Default locale (id) has no prefix; non-default (/en) has a prefix.
  */
+function buildLangSwitchHref(pathname, currentLang, targetLang) {
+  let suffix = pathname
+  if (currentLang !== defaultLang) {
+    suffix = pathname.replace(new RegExp(`^/${currentLang}(/|$)`), '$1') || '/'
+  }
+  if (!suffix.startsWith('/')) suffix = '/' + suffix
+  if (targetLang === defaultLang) return suffix
+  return `/${targetLang}${suffix === '/' ? '' : suffix}`
+}
 
 export default function SiteLayout({ children }) {
-  const { lang } = useParams()
+  const lang = useLang()
   const location = useLocation()
   const pathname = location.pathname
   const t = useTranslation(lang)
@@ -56,7 +51,7 @@ export default function SiteLayout({ children }) {
   const [legalVisibility, setLegalVisibility] = useState({})
   const [showFaqLink, setShowFaqLink] = useState(false)
 
-  const locale = supportedLangs.includes(lang) ? lang : defaultLang
+  const locale = lang
 
   const headerCmsPages = useMemo(
     () =>
@@ -85,9 +80,9 @@ export default function SiteLayout({ children }) {
   }, [locale])
 
   useEffect(() => {
-    if (typeof document !== 'undefined' && lang) {
+    if (typeof document !== 'undefined') {
       document.documentElement.lang = lang
-      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
+      document.documentElement.dir = 'ltr'
     }
   }, [lang])
 
@@ -103,18 +98,20 @@ export default function SiteLayout({ children }) {
     }
   }, [langDropdownOpen])
 
+  const lp = langPrefix(lang)
+
   return (
     <div className="home-page">
       <header className="header">
         <div className="header-inner header-inner--minimal">
-          <BrandLogo href={`/${lang}`} ariaLabel={t('nav.home')} text={COMPRESS_PDF_EN} />
+          <BrandLogo href={`${lp}/`} ariaLabel={t('nav.home')} text={COMPRESS_PDF_EN} />
           {headerCmsPages.length > 0 && (
             <nav className="header-cms-nav" aria-label="Site pages">
               <ul className="header-cms-nav-list">
                 {headerCmsPages.map((p) => (
                   <li key={p.id}>
                     <Link
-                      to={`/${locale}/page/${p.slug}`}
+                      to={`${lp}/page/${p.slug}`}
                       className="header-cms-nav-link"
                     >
                       {ucWords(p.title)}
@@ -135,9 +132,9 @@ export default function SiteLayout({ children }) {
                 aria-label="Select language"
               >
                 <span className="lang-dropdown-flag" aria-hidden>
-                  <LangFlag lang={supportedLangs.includes(lang) ? lang : defaultLang} width={22} />
+                  <LangFlag lang={lang} width={22} />
                 </span>
-                <span className="lang-dropdown-label">{langShortLabel[lang] ?? lang?.toUpperCase() ?? 'EN'}</span>
+                <span className="lang-dropdown-label">{langShortLabel[lang] ?? lang?.toUpperCase() ?? 'ID'}</span>
                 <span className="lang-dropdown-chevron" aria-hidden>▼</span>
               </button>
               {langDropdownOpen && (
@@ -145,7 +142,7 @@ export default function SiteLayout({ children }) {
                   {supportedLangs.map((l) => (
                     <li key={l} role="option" aria-selected={lang === l}>
                       <a
-                        href={pathname.replace(new RegExp(`^/${lang}(/|$)`), `/${l}$1`)}
+                        href={buildLangSwitchHref(pathname, lang, l)}
                         className={`lang-dropdown-item ${lang === l ? 'lang-dropdown-item--active' : ''}`}
                         onClick={() => {
                           writeUserLocalePreference(l)

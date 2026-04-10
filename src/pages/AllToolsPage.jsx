@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
-import { defaultLang, langToOgLocale } from '../i18n/translations'
+import { langPrefix, langToOgLocale } from '../i18n/translations'
+import { useLang } from '../hooks/useLang'
 import { SeoHead } from '../components/SeoHead'
 import { COMPRESS_PDF_EN } from '../constants/brand'
 import './HomePage.css'
@@ -35,7 +35,7 @@ const TOOLS_LIST = [
 ]
 
 function AllToolsPage() {
-  const { lang = defaultLang } = useParams()
+  const lang = useLang()
   const t = useTranslation(lang)
 
   useEffect(() => {
@@ -43,9 +43,9 @@ function AllToolsPage() {
   }, [lang])
 
   const getToolHref = (tool) => {
-    if (tool.available && tool.slug === '') return `/${lang}`
-    if (tool.available) return `/${lang}/${tool.slug}`
-    return `/${lang}/${tool.slug}`
+    const lp = langPrefix(lang)
+    if (tool.available && tool.slug === '') return `${lp}/`
+    return `${lp}/${tool.slug}`
   }
 
   return (

@@ -13,6 +13,7 @@ compressedPDF-cms
 app.apimstec.com/
 dist
 dist-ssr
+_seo_cache
 *.local
 compresspdf.id-build
 

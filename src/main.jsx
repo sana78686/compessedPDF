@@ -1,12 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { prepareCmsClient } from './api/cms.js'
+import { prepareCmsClient, startRevisionPolling } from './api/cms.js'
 import './index.css'
 import App from './App.jsx'
 
 async function boot() {
   await prepareCmsClient()
+  startRevisionPolling()
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <BrowserRouter>

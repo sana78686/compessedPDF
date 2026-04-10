@@ -1,13 +1,14 @@
-import { useParams, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
-import { defaultLang, langToOgLocale } from '../i18n/translations'
+import { langPrefix, langToOgLocale } from '../i18n/translations'
+import { useLang } from '../hooks/useLang'
 import { useEffect } from 'react'
 import { SeoHead } from '../components/SeoHead'
 import './HomePage.css'
 import './ComingSoonPage.css'
 
 function ComingSoonPage() {
-  const { lang = defaultLang } = useParams()
+  const lang = useLang()
   const t = useTranslation(lang)
 
   useEffect(() => {
@@ -26,7 +27,7 @@ function ComingSoonPage() {
       <main className="coming-soon-main">
         <h1 className="coming-soon-title">Coming soon</h1>
         <p className="coming-soon-text">This tool is under development. Try our Compress PDF tool in the meantime.</p>
-        <Link to={`/${lang}/tools`} className="coming-soon-btn">All PDF Tools</Link>
+        <Link to={`${langPrefix(lang)}/tools`} className="coming-soon-btn">All PDF Tools</Link>
       </main>
     </div>
   )

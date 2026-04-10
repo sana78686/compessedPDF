@@ -1,13 +1,14 @@
 import { MEGA_MENU_CATEGORIES } from '../config/toolsMegaMenu'
 import { COMPRESS_PDF_EN } from '../constants/brand'
+import { langPrefix } from '../i18n/translations'
 import { ucWords } from '../utils/ucWords'
 import { getMegaMenuIcon } from './MegaMenuIcons'
 import './MegaMenu.css'
 
 export default function MegaMenu({ lang, t, isOpen, onClose }) {
   if (!isOpen) return null
-
-  const getToolHref = (slug) => (slug === '' ? `/${lang}` : `/${lang}/${slug}`)
+  const lp = langPrefix(lang)
+  const getToolHref = (slug) => (slug === '' ? `${lp}/` : `${lp}/${slug}`)
   const getIconClass = (tool) => {
     if (tool.icon) return tool.icon
     if (tool.slug === '') return 'compress'

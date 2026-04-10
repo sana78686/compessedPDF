@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense, startTransition, useMemo } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
-import { defaultLang } from '../i18n/translations'
-import { getFaq, getHomeCards, getHomePageContent, getToolSchemaJsonLd } from '../api/cms'
+import { langPrefix } from '../i18n/translations'
+import { useLang } from '../hooks/useLang'
+import { getFaq, getHomeCards, getSections, getHomePageContent, getToolSchemaJsonLd } from '../api/cms'
 import JsonLd from '../components/JsonLd'
 import './HomePage.css'
 import './CmsPage.css'
@@ -56,16 +57,17 @@ function parseCompressionSettings(settings) {
 }
 
 function HomePage() {
-  const { lang = defaultLang } = useParams()
+  const lang = useLang()
   const location = useLocation()
   const navigate = useNavigate()
   const pathname = location.pathname
   const t = useTranslation(lang)
-  const isResultPath = pathname === `/${lang}/compress/result`
-  const isCompressPath = pathname === `/${lang}/compress`
+  const lp = langPrefix(lang)
+  const isResultPath = pathname === `${lp}/compress/result`
+  const isCompressPath = pathname === `${lp}/compress`
   const isCompressPage = isCompressPath || isResultPath
   const step = isResultPath ? STEP_RESULT : isCompressPath ? STEP_SETTINGS : STEP_UPLOAD
-  const isHomeLanding = pathname === `/${lang}` || pathname === `/${lang}/`
+  const isHomeLanding = pathname === `${lp}/` || pathname === lp
 
   const COLOR_OPTIONS = [
     { value: 'no-change', label: t('colorNoChange') },
@@ -95,6 +97,7 @@ function HomePage() {
   /** CMS “Home page” rich text (locale-specific), from public /home-content */
   const [cmsHomeHtml, setCmsHomeHtml] = useState('')
   const [howSection, setHowSection] = useState(null)
+  const [cmsSections, setCmsSections] = useState([])
   const [homeJsonLd, setHomeJsonLd] = useState(null)
   const [toolJsonLd, setToolJsonLd] = useState(null)
 
@@ -155,18 +158,21 @@ function HomePage() {
     Promise.all([
       getFaq(lang).catch(() => ({ faq: [] })),
       getHomeCards(lang).catch(() => ({ cards: [] })),
+      getSections(lang).catch(() => ({ sections: [] })),
     ])
-      .then(([faqRes, cardsRes]) => {
+      .then(([faqRes, cardsRes, sectionsRes]) => {
         if (cancelled) return
         setLandingFaq(Array.isArray(faqRes.faq) ? faqRes.faq : [])
         setLandingCards(Array.isArray(cardsRes.cards) ? cardsRes.cards : [])
         setHowSection(cardsRes?.section && typeof cardsRes.section === 'object' ? cardsRes.section : null)
+        setCmsSections(Array.isArray(sectionsRes.sections) ? sectionsRes.sections : [])
       })
       .catch(() => {
         if (cancelled) return
         setLandingFaq([])
         setLandingCards([])
         setHowSection(null)
+        setCmsSections([])
       })
     return () => { cancelled = true }
   }, [showBelowFold, lang])
@@ -185,14 +191,14 @@ function HomePage() {
   // Sync URL with state: on /compress/result with no result data -> back to settings
   useEffect(() => {
     if (isResultPath && (!compressionResults || compressionResults.length === 0)) {
-      navigate(`/${lang}/compress`, { replace: true })
+      navigate(`${lp}/compress`, { replace: true })
     }
   }, [isResultPath, compressionResults, navigate, lang])
 
   // Sync URL with state: on /compress with no files -> go to upload
   useEffect(() => {
     if (isCompressPath && files.length === 0) {
-      navigate(`/${lang}`, { replace: true })
+      navigate(`${lp}/`, { replace: true })
     }
   }, [isCompressPath, files.length, navigate, lang])
 
@@ -210,7 +216,7 @@ function HomePage() {
         else setError(null)
         return [...prev, ...toAdd]
       })
-      navigate(`/${lang}/compress`, { replace: true })
+      navigate(`${lp}/compress`, { replace: true })
     }
     e.target.value = ''
   }, [navigate, lang, t])
@@ -233,7 +239,7 @@ function HomePage() {
         else setError(null)
         return [...prev, ...toAdd]
       })
-      navigate(`/${lang}/compress`, { replace: true })
+      navigate(`${lp}/compress`, { replace: true })
     }
   }, [navigate, lang, t])
 
@@ -264,7 +270,7 @@ function HomePage() {
     const next = files.filter((_, i) => i !== index)
     setFiles(next)
     if (!next.length) {
-      navigate(`/${lang}`, { replace: true })
+      navigate(`${lp}/`, { replace: true })
     }
   }
 
@@ -437,7 +443,7 @@ function HomePage() {
 
       setProgress({ message: t('progressFinalizing'), percent: 100 })
       setCompressionResults(results)
-      navigate(`/${lang}/compress/result`, { replace: true })
+      navigate(`${lp}/compress/result`, { replace: true })
     } catch (err) {
       const msg = err?.message != null ? String(err.message) : ''
       const cause = err?.underlyingError?.message ?? err?.cause?.message
@@ -486,14 +492,14 @@ function HomePage() {
 
   const handleErase = () => {
     setCompressionResults(null)
-    navigate(`/${lang}/compress`, { replace: true })
+    navigate(`${lp}/compress`, { replace: true })
   }
 
   const handleRestart = () => {
     setCompressionResults(null)
     setFiles([])
     setError(null)
-    navigate(`/${lang}`, { replace: true })
+    navigate(`${lp}/`, { replace: true })
   }
 
   /* CMS FAQ: show section only when at least one item exists */
@@ -576,7 +582,7 @@ function HomePage() {
 
             {showBelowFold && (
               <Suspense fallback={null}>
-                <LandingBelowFold t={t} cards={landingCards} howSection={howSection} />
+                <LandingBelowFold t={t} cards={landingCards} howSection={howSection} sections={cmsSections} />
               </Suspense>
             )}
           </>

@@ -5,7 +5,10 @@ import { isCmsHomeSeoRoute } from '../utils/publicSeoRoutes'
 
 /** CMS page/blog detail: hreflang comes from API (alternate_locales) inside SeoHead — skip duplicates. */
 function shouldSkipGlobalHreflang(pathname) {
-  return /^\/[a-z]{2}\/(page|blog)\/[^/]+\/?$/.test(pathname || '')
+  if (!pathname) return false
+  if (/^\/[a-z]{2}\/(page|blog)\/[^/]+\/?$/.test(pathname)) return true
+  if (/^\/(page|blog)\/[^/]+\/?$/.test(pathname)) return true
+  return false
 }
 
 /**
