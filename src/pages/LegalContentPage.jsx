@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getLegalPage } from '../api/cms'
+import JsonLd from '../components/JsonLd'
 import { SeoHead } from '../components/SeoHead'
 import { absolutizeCmsHtml } from '../utils/cmsAssetUrl'
 import { getPreferredLang, supportedLangs, langToOgLocale, langPrefix } from '../i18n/translations'
@@ -66,6 +67,7 @@ export default function LegalContentPage() {
         ogDescription={plainText(data.content || '').slice(0, 160)}
         ogLocale={langToOgLocale(lang)}
       />
+      <JsonLd data={data.json_ld} />
       <header className="cms-page-header">
         <h1 className="cms-page-title">{data.title}</h1>
       </header>

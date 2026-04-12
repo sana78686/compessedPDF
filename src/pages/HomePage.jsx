@@ -108,11 +108,13 @@ function HomePage() {
     document.documentElement.lang = lang
   }, [lang])
 
+  const publicPathForSeo = pathname.split('?')[0] || '/'
+
   /* Home landing: fetch CMS home HTML in parallel with main content. */
   useEffect(() => {
     if (!isHomeLanding) return undefined
     let cancelled = false
-    const homePromise = getHomePageContent(lang)
+    const homePromise = getHomePageContent(lang, publicPathForSeo)
       .then((res) => {
         if (cancelled) return
         setCmsHomeHtml(typeof res?.content === 'string' ? res.content : '')
@@ -129,7 +131,7 @@ function HomePage() {
     return () => {
       cancelled = true
     }
-  }, [isHomeLanding, lang])
+  }, [isHomeLanding, lang, publicPathForSeo])
 
   useEffect(() => {
     if (!isCompressPage) {
@@ -137,7 +139,7 @@ function HomePage() {
       return undefined
     }
     let cancelled = false
-    getToolSchemaJsonLd(lang)
+    getToolSchemaJsonLd(lang, publicPathForSeo)
       .then((res) => {
         if (cancelled) return
         const graph = res?.json_ld?.['@graph']
@@ -149,7 +151,7 @@ function HomePage() {
     return () => {
       cancelled = true
     }
-  }, [isCompressPage, lang])
+  }, [isCompressPage, lang, publicPathForSeo])
 
   /* Fetch FAQ and cards when below-the-fold is shown */
   useEffect(() => {

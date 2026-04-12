@@ -1,3 +1,9 @@
+# CMS push — cms-seo-sync.php reads this. Must match FRONTEND_SEO_SYNC_SECRET in Global CMS .env.
+# Replace your-secret-here with your real random string on the server (avoid committing real secrets to git).
+<IfModule mod_env.c>
+  SetEnv CMS_SEO_SYNC_SECRET "Seosyncsecret123@"
+</IfModule>
+
 # SPA fallback with SEO prerender.
 # Static files (JS, CSS, images, fonts) are served directly by Apache.
 # All other requests go through seo-prerender.php which injects correct
@@ -6,12 +12,27 @@
   RewriteEngine On
   RewriteBase /
 
-  # Serve real files directly (JS, CSS, images, fonts, etc.)
+  # DirectoryIndex maps "/" → "index.html". Without this, the rule below serves the raw Vite shell
+  # (empty <title>) because REQUEST_URI is /index.html, not "/", so the old "except /" guard did not apply.
+  RewriteRule ^$ /seo-prerender.php [L]
+  RewriteRule ^index\.html$ /seo-prerender.php [L]
+
+  # Serve real files first — after CMS "push", robots.txt / sitemap.xml on disk win over the live-fetch PHP fallback
+  # Never short-circuit the SPA shell: "/" and "/index.html" are handled above.
   RewriteCond %{REQUEST_FILENAME} -f
+  RewriteCond %{REQUEST_URI} !^/?$
+  RewriteCond %{REQUEST_URI} !^/index\.html$
   RewriteRule . - [L]
 
-  # Serve real directories directly
+  # No file yet: pull live from CMS (optional)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^robots\.txt$ /robots-cms.php [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^sitemap\.xml$ /sitemap-cms.php [L]
+
+  # Serve real directories directly (but not document root — otherwise "/" stops here and never hits seo-prerender.php)
   RewriteCond %{REQUEST_FILENAME} -d
+  RewriteCond %{REQUEST_URI} !^/?$
   RewriteRule . - [L]
 
   # Everything else → PHP prerender (injects CMS meta into index.html)

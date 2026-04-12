@@ -50,7 +50,7 @@ function siteOriginFromEnv(viteEnv) {
 }
 
 function localesForSitemapFallback(viteEnv) {
-  const s = String(viteEnv.VITE_CMS_PREFETCH_LOCALES || 'id,en,ms,es,fr,ar,ru').trim()
+  const s = String(viteEnv.VITE_CMS_PREFETCH_LOCALES || 'id,en').trim()
   const list = s.split(/[\s,]+/).filter(Boolean)
   return list.length ? list : ['id', 'en']
 }
@@ -633,6 +633,9 @@ export default defineConfig(({ mode }) => {
   const cmsRobotsPath = `/${siteDomainForProxy}/robots.txt`
   const cmsSitemapPath = `/${siteDomainForProxy}/sitemap.xml`
   return {
+    esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
+    },
     plugins: [
       react(),
       faviconCacheBustPlugin(viteEnv),

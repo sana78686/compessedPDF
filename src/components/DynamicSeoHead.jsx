@@ -50,7 +50,7 @@ export default function DynamicSeoHead() {
 
     async function loadSeoData() {
       try {
-        const data = await getHomeSeo(locale)
+        const data = await getHomeSeo(locale, location.pathname)
         if (!isMounted) return
         setSeoData({
           meta_title: typeof data.meta_title === 'string' ? data.meta_title : '',
@@ -77,7 +77,7 @@ export default function DynamicSeoHead() {
 
     loadSeoData()
     return () => { isMounted = false }
-  }, [isHomeRoute, locale])
+  }, [isHomeRoute, locale, location.pathname])
 
   useEffect(() => {
     let cancelled = false

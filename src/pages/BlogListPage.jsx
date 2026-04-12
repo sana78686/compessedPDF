@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { getBlogs } from '../api/cms'
+import JsonLd from '../components/JsonLd'
 import { SeoHead } from '../components/SeoHead'
 import { getPreferredLang, supportedLangs, langToOgLocale, langPrefix } from '../i18n/translations'
 import { useLang } from '../hooks/useLang'
@@ -41,17 +42,21 @@ export default function BlogListPage() {
   const t = useTranslation(lang)
   const localeForApi = supportedLangs.includes(lang) ? lang : getPreferredLang()
   const [blogs, setBlogs] = useState([])
+  const [listJsonLd, setListJsonLd] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     document.documentElement.lang = lang
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
+    document.documentElement.dir = 'ltr'
   }, [lang])
 
   useEffect(() => {
     getBlogs(localeForApi)
-      .then((res) => setBlogs(res.blogs || []))
+      .then((res) => {
+        setBlogs(res.blogs || [])
+        setListJsonLd(res.json_ld ?? null)
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [localeForApi])
@@ -92,6 +97,7 @@ export default function BlogListPage() {
         ogDescription={t('blog.listIntro')}
         ogLocale={langToOgLocale(lang)}
       />
+      <JsonLd data={listJsonLd} />
       <header className="blog-list-header">
         <h1 className="blog-list-title">{t('blog.listTitle')}</h1>
         <p className="blog-list-intro">{t('blog.listIntro')}</p>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from '../i18n/useTranslation'
 import { getContactSettings, submitContactForm } from '../api/cms'
+import JsonLd from '../components/JsonLd'
 import { SeoHead } from '../components/SeoHead'
 import { getPreferredLang, supportedLangs, langToOgLocale, langPrefix } from '../i18n/translations'
 import { useLang } from '../hooks/useLang'
@@ -131,6 +132,7 @@ export default function ContactPage() {
         ogDescription={t('contact.intro')}
         ogLocale={langToOgLocale(lang)}
       />
+      <JsonLd data={settings?.json_ld} />
       <div className="contact-page-grid">
         <div className="contact-page-intro">
           <h1 className="contact-page-title">{t('contact.title')}</h1>

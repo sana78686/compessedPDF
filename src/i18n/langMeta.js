@@ -4,20 +4,10 @@
 export const langToCountryCode = {
   id: 'id',
   en: 'gb',
-  ms: 'my',
-  es: 'es',
-  fr: 'fr',
-  ar: 'sa',
-  ru: 'ru',
 }
 
 /** Short label shown next to flag (avoid OS “GB” letter glyphs for emoji flags). */
 export const langShortLabel = {
   id: 'ID',
   en: 'EN',
-  ms: 'MS',
-  es: 'ES',
-  fr: 'FR',
-  ar: 'AR',
-  ru: 'RU',
 }

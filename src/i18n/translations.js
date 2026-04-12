@@ -1,7 +1,7 @@
 import idTranslations from './translations.id.js'
 
 /**
- * UI strings: id (Indonesian), en, ms (Malay), es, fr, ar, ru.
+ * UI strings: id (Indonesian), en (English).
  * Missing keys fall back to English (see getTranslation).
  */
 export const translations = {
@@ -221,211 +221,6 @@ export const translations = {
     },
   },
   id: idTranslations,
-  ms: {
-    logoMark: 'Compress PDF',
-    nav: {
-      merge: 'GABUNG PDF',
-      split: 'PECAH PDF',
-      compress: 'COMPRESS PDF',
-      convert: 'TUKAR PDF',
-      allTools: 'SEMUA ALAT PDF',
-      login: 'Log masuk',
-      dashboard: 'Papan pemuka',
-      signUp: 'Daftar',
-      home: 'Laman utama',
-    },
-    title: 'Compress PDF files',
-    subtitle: 'Kurangkan saiz fail dengan kualiti PDF yang baik.',
-    selectPdf: 'Pilih fail PDF',
-    orDrop: 'atau lepas PDF di sini',
-    landing: {
-      readySubtitle: 'Pilih PDF anda atau seret dan lepas di bawah.',
-      cmsSectionAria: 'Site introduction',
-      howTitle: 'Cara ia berfungsi',
-      howStep1: 'Muat naik',
-      howStep1Desc: 'Pilih satu atau lebih fail PDF daripada peranti anda.',
-      howStep2: 'Laraskan',
-      howStep2Desc: 'Tetapkan DPI dan kualiti, kemudian klik Mampatkan.',
-      howStep3: 'Muat turun',
-      howStep3Desc: 'Dapatkan PDF yang lebih kecil dan simpan atau kongsi.',
-      faqTitle: 'Soalan lazim',
-      featuresTitle: 'Mengapa alat kami?',
-    },
-    footerCopyrightPrefix: '© compressedPDF 2026 ® – ',
-    footerPoweredBy: 'dikuasakan oleh Apimstec',
-    footerLanguage: 'Bahasa Melayu',
-    blog: {
-      listTitle: 'Blog',
-      listIntro: 'Artikel dan kemas kini terkini.',
-      emptyTitle: 'Tiada artikel lagi',
-      emptyBody:
-        'Kami belum menerbitkan sebarang siaran blog untuk bahasa ini. Sila kembali kemudian, atau gunakan laman utama untuk mampatkan PDF anda.',
-    },
-  },
-  es: {
-    logoMark: 'Compress PDF',
-    nav: {
-      merge: 'UNIR PDF',
-      split: 'DIVIDIR PDF',
-      compress: 'COMPRESS PDF',
-      convert: 'CONVERTIR PDF',
-      allTools: 'TODAS LAS HERRAMIENTAS PDF',
-      login: 'Iniciar sesión',
-      dashboard: 'Panel',
-      signUp: 'Registrarse',
-      home: 'Inicio',
-    },
-    title: 'Compress PDF files',
-    subtitle: 'Reduce el tamaño del archivo optimizando la calidad del PDF.',
-    selectPdf: 'Seleccionar archivos PDF',
-    orDrop: 'o suelta los PDF aquí',
-    landing: {
-      readySubtitle: 'Selecciona tu PDF o arrástralo y suéltalo abajo.',
-      cmsSectionAria: 'Site introduction',
-      howTitle: 'Cómo funciona',
-      howStep1: 'Subir',
-      howStep1Desc: 'Selecciona uno o más archivos PDF desde tu dispositivo.',
-      howStep2: 'Ajustar',
-      howStep2Desc: 'Configura DPI y calidad, luego pulsa Comprimir.',
-      howStep3: 'Descargar',
-      howStep3Desc: 'Obtén tu PDF más pequeño y guárdalo o compártelo.',
-      faqTitle: 'Preguntas frecuentes',
-      featuresTitle: '¿Por qué usar nuestro compresor?',
-    },
-    footerCopyrightPrefix: '© compressedPDF 2026 ® – ',
-    footerPoweredBy: 'impulsado por Apimstec',
-    footerLanguage: 'Español',
-    blog: {
-      listTitle: 'Blog',
-      listIntro: 'Últimos artículos y novedades.',
-      emptyTitle: 'Aún no hay artículos',
-      emptyBody:
-        'Todavía no hay entradas de blog en este idioma. Vuelve más tarde o usa la página principal para comprimir tus PDF.',
-    },
-  },
-  fr: {
-    logoMark: 'Compress PDF',
-    nav: {
-      merge: 'FUSIONNER PDF',
-      split: 'DIVISER PDF',
-      compress: 'COMPRESS PDF',
-      convert: 'CONVERTIR PDF',
-      allTools: 'TOUT LES OUTILS PDF',
-      login: 'Connexion',
-      dashboard: 'Tableau de bord',
-      signUp: 'S’inscrire',
-      home: 'Accueil',
-    },
-    title: 'Compress PDF files',
-    subtitle: 'Réduisez la taille du fichier tout en optimisant la qualité PDF.',
-    selectPdf: 'Sélectionner des fichiers PDF',
-    orDrop: 'ou déposez les PDF ici',
-    landing: {
-      readySubtitle: 'Sélectionnez votre PDF ou glissez-déposez-le ci-dessous.',
-      cmsSectionAria: 'Site introduction',
-      howTitle: 'Comment ça marche',
-      howStep1: 'Téléverser',
-      howStep1Desc: 'Choisissez un ou plusieurs fichiers PDF sur votre appareil.',
-      howStep2: 'Ajuster',
-      howStep2Desc: 'Réglez le DPI et la qualité, puis cliquez sur Compresser.',
-      howStep3: 'Télécharger',
-      howStep3Desc: 'Obtenez un PDF plus léger et enregistrez-le ou partagez-le.',
-      faqTitle: 'Questions fréquentes',
-      featuresTitle: 'Pourquoi notre compresseur ?',
-    },
-    footerCopyrightPrefix: '© compressedPDF 2026 ® – ',
-    footerPoweredBy: 'propulsé par Apimstec',
-    footerLanguage: 'Français',
-    blog: {
-      listTitle: 'Blog',
-      listIntro: 'Derniers articles et mises à jour.',
-      emptyTitle: 'Pas encore d’articles',
-      emptyBody:
-        'Aucun article de blog n’est publié pour cette langue pour le moment. Revenez plus tard ou utilisez l’accueil pour compresser vos PDF.',
-    },
-  },
-  ar: {
-    logoMark: 'Compress PDF',
-    nav: {
-      merge: 'دمج PDF',
-      split: 'تقسيم PDF',
-      compress: 'COMPRESS PDF',
-      convert: 'تحويل PDF',
-      allTools: 'كل أدوات PDF',
-      login: 'تسجيل الدخول',
-      dashboard: 'لوحة التحكم',
-      signUp: 'إنشاء حساب',
-      home: 'الرئيسية',
-    },
-    title: 'Compress PDF files',
-    subtitle: 'قلل حجم الملف مع الحفاظ على جودة PDF.',
-    selectPdf: 'اختر ملفات PDF',
-    orDrop: 'أو أسقط ملفات PDF هنا',
-    landing: {
-      readySubtitle: 'اختر ملف PDF أو اسحبه وأفلته أدناه.',
-      cmsSectionAria: 'Site introduction',
-      howTitle: 'كيف يعمل',
-      howStep1: 'رفع',
-      howStep1Desc: 'اختر ملف PDF واحدًا أو أكثر من جهازك.',
-      howStep2: 'ضبط',
-      howStep2Desc: 'اضبط الدقة والجودة، ثم اضغط ضغط.',
-      howStep3: 'تنزيل',
-      howStep3Desc: 'احصل على PDF أصغر واحفظه أو شاركه.',
-      faqTitle: 'الأسئلة الشائعة',
-      featuresTitle: 'لماذا أداتنا؟',
-    },
-    footerCopyrightPrefix: '© compressedPDF 2026 ® – ',
-    footerPoweredBy: 'مدعوم من Apimstec',
-    footerLanguage: 'العربية',
-    blog: {
-      listTitle: 'المدونة',
-      listIntro: 'أحدث المقالات والتحديثات.',
-      emptyTitle: 'لا مقالات بعد',
-      emptyBody:
-        'لا توجد مقالات بالعربية بعد. عد لاحقًا أو استخدم الصفحة الرئيسية لضغط ملفات PDF.',
-    },
-  },
-  ru: {
-    logoMark: 'Compress PDF',
-    nav: {
-      merge: 'ОБЪЕДИНИТЬ PDF',
-      split: 'РАЗДЕЛИТЬ PDF',
-      compress: 'COMPRESS PDF',
-      convert: 'КОНВЕРТИРОВАТЬ PDF',
-      allTools: 'ВСЕ ИНСТРУМЕНТЫ PDF',
-      login: 'Войти',
-      dashboard: 'Панель',
-      signUp: 'Регистрация',
-      home: 'Главная',
-    },
-    title: 'Compress PDF files',
-    subtitle: 'Уменьшите размер файла, сохраняя качество PDF.',
-    selectPdf: 'Выберите файлы PDF',
-    orDrop: 'или перетащите PDF сюда',
-    landing: {
-      readySubtitle: 'Выберите PDF или перетащите его ниже.',
-      cmsSectionAria: 'Site introduction',
-      howTitle: 'Как это работает',
-      howStep1: 'Загрузка',
-      howStep1Desc: 'Выберите один или несколько PDF с устройства.',
-      howStep2: 'Настройка',
-      howStep2Desc: 'Задайте DPI и качество, затем нажмите Сжать.',
-      howStep3: 'Скачать',
-      howStep3Desc: 'Получите меньший PDF и сохраните или поделитесь.',
-      faqTitle: 'Частые вопросы',
-      featuresTitle: 'Почему наш компрессор?',
-    },
-    footerCopyrightPrefix: '© compressedPDF 2026 ® – ',
-    footerPoweredBy: 'поддерживается Apimstec',
-    footerLanguage: 'Русский',
-    blog: {
-      listTitle: 'Блог',
-      listIntro: 'Последние статьи и обновления.',
-      emptyTitle: 'Пока нет статей',
-      emptyBody:
-        'Для этого языка записей в блоге пока нет. Загляните позже или сожмите PDF на главной странице.',
-    },
-  },
 }
 
 /** Public site default until the visitor picks another language (stored in localStorage). */
@@ -441,11 +236,6 @@ export function langPrefix(lang) {
 const OG_LOCALE_MAP = {
   id: 'id_ID',
   en: 'en_US',
-  ms: 'ms_MY',
-  es: 'es_ES',
-  fr: 'fr_FR',
-  ar: 'ar_SA',
-  ru: 'ru_RU',
 }
 
 export function langToOgLocale(lang) {
@@ -515,19 +305,13 @@ export function writeLocaleHintCache(lang) {
 export const langOptions = {
   id: { flag: '🇮🇩', label: 'Bahasa Indonesia' },
   en: { flag: '🇬🇧', label: 'English' },
-  ms: { flag: '🇲🇾', label: 'Bahasa Melayu' },
-  es: { flag: '🇪🇸', label: 'Español' },
-  fr: { flag: '🇫🇷', label: 'Français' },
-  ar: { flag: '🇸🇦', label: 'العربية' },
-  ru: { flag: '🇷🇺', label: 'Русский' },
 }
 
 /** Map full browser locale tags to app lang (ISO 639-1). */
 const BROWSER_LANG_ALIASES = {
   'id-id': 'id',
-  'ms-my': 'ms',
-  'en-my': 'ms',
-  my: 'ms',
+  'en-us': 'en',
+  'en-gb': 'en',
 }
 
 /**

@@ -37,14 +37,17 @@ function resolveSiteDomainForApi() {
   return CMS_SITE_DOMAIN
 }
 
-function withLocaleQuery(path, locale) {
-  if (!locale) return path
+function withLocaleQuery(path, locale, publicPath) {
+  const parts = []
+  if (locale) parts.push(`locale=${encodeURIComponent(locale)}`)
+  if (publicPath) parts.push(`public_path=${encodeURIComponent(publicPath)}`)
+  if (parts.length === 0) return path
   const joiner = path.includes('?') ? '&' : '?'
-  return `${path}${joiner}locale=${encodeURIComponent(locale)}`
+  return `${path}${joiner}${parts.join('&')}`
 }
 
-function cacheKey(host, path, locale) {
-  return `${host}|${withLocaleQuery(path, locale)}`
+function cacheKey(host, path, locale, publicPath) {
+  return `${host}|${withLocaleQuery(path, locale, publicPath)}`
 }
 
 function cloneJson(data) {
@@ -104,15 +107,15 @@ export function clearCmsApiCache() {
  * @param {Record<string, unknown>} options
  */
 async function request(path, options = {}) {
-  const { locale, ...fetchOptions } = options
+  const { locale, publicPath, ...fetchOptions } = options
   const method = String(fetchOptions.method || 'GET').toUpperCase()
   const host = resolveSiteDomainForApi()
 
   if (method !== 'GET') {
-    return uncachedRequest(path, { locale, ...fetchOptions }, host)
+    return uncachedRequest(path, { locale, publicPath, ...fetchOptions }, host)
   }
 
-  const key = cacheKey(host, path, locale)
+  const key = cacheKey(host, path, locale, publicPath)
   const now = Date.now()
 
   const mem = memoryCache.get(key)
@@ -131,7 +134,7 @@ async function request(path, options = {}) {
     return cloneJson(await existing)
   }
 
-  const p = uncachedRequest(path, { locale, ...fetchOptions }, host)
+  const p = uncachedRequest(path, { locale, publicPath, ...fetchOptions }, host)
     .then((data) => {
       if (data != null && typeof data === 'object' && data._seo_redirect) {
         return cloneJson(data)
@@ -156,7 +159,7 @@ async function request(path, options = {}) {
  * @param {string | undefined} locale
  * @param {string} host
  */
-async function fetchPublicJsonUncached(path, locale, host) {
+async function fetchPublicJsonUncached(path, locale, host, publicPath) {
   /** @type {{ root: string, headers: Record<string, string> }[]} */
   const attempts = []
   if (useDomainInApiPath) {
@@ -177,7 +180,7 @@ async function fetchPublicJsonUncached(path, locale, host) {
 
   for (let i = 0; i < attempts.length; i += 1) {
     const { root, headers } = attempts[i]
-    const url = `${CMS_API_BASE}${root}${withLocaleQuery(path, locale)}`
+    const url = `${CMS_API_BASE}${root}${withLocaleQuery(path, locale, publicPath)}`
     const res = await fetch(url, { headers })
     if (res.ok) {
       return res.json()
@@ -206,7 +209,7 @@ function primeCmsPrefetchBundle(bundle) {
     if (!entries || typeof entries !== 'object') continue
     for (const apiPath of Object.keys(entries)) {
       if (!apiPath.startsWith('/')) continue
-      const key = cacheKey(host, apiPath, locale)
+      const key = cacheKey(host, apiPath, locale, undefined)
       const copy = cloneJson(entries[apiPath])
       memoryCache.set(key, { data: copy, expires: exp })
       writeSessionCache(key, copy, exp)
@@ -302,11 +305,11 @@ export function startRevisionPolling() {
 }
 
 async function uncachedRequest(path, options, host) {
-  const { locale, ...fetchOptions } = options
+  const { locale, publicPath, ...fetchOptions } = options
   const method = String(fetchOptions.method || 'GET').toUpperCase()
 
   if (method === 'GET') {
-    return fetchPublicJsonUncached(path, locale, host)
+    return fetchPublicJsonUncached(path, locale, host, publicPath)
   }
 
   /** @type {{ root: string, headers: Record<string, string> }[]} */
@@ -337,7 +340,7 @@ async function uncachedRequest(path, options, host) {
 
   for (let i = 0; i < attempts.length; i += 1) {
     const { root, headers } = attempts[i]
-    const url = `${CMS_API_BASE}${root}${withLocaleQuery(path, locale)}`
+    const url = `${CMS_API_BASE}${root}${withLocaleQuery(path, locale, publicPath)}`
     const res = await fetch(url, { ...fetchOptions, headers })
     if (res.ok) {
       return res.json()
@@ -356,7 +359,7 @@ async function uncachedRequest(path, options, host) {
   throw new Error('Public API request failed')
 }
 
-/** @param {string} [locale] - BCP-style code: id, en, ms, es, fr, ar, ru */
+/** @param {string} [locale] - BCP-style code: id, en */
 export function getPages(locale) {
   return request('/pages', { locale })
 }
@@ -393,6 +396,7 @@ function normalizeBlogsResponse(res) {
 export function getBlogs(locale) {
   return request('/blogs', { locale }).then((res) => ({
     blogs: normalizeBlogsResponse(res),
+    json_ld: res && typeof res === 'object' && 'json_ld' in res ? res.json_ld : null,
   }))
 }
 
@@ -438,19 +442,22 @@ export function getSections(locale) {
   return request('/sections', { locale })
 }
 
-/** @param {string} [locale] */
-export function getHomePageContent(locale) {
-  return request('/home-content', { locale })
+/**
+ * @param {string} [locale]
+ * @param {string} [publicPath] - e.g. window.location.pathname so home vs /compress resolve different generator attachments
+ */
+export function getHomePageContent(locale, publicPath) {
+  return request('/home-content', { locale, publicPath })
 }
 
 /** JSON-LD for PDF tool route (WebApplication + FAQ + breadcrumb). Tenant comes from API host + X-Domain. */
-export function getToolSchemaJsonLd(locale) {
-  return request('/schema/tool', { locale })
+export function getToolSchemaJsonLd(locale, publicPath) {
+  return request('/schema/tool', { locale, publicPath })
 }
 
-/** @param {string} [locale] */
-export function getHomeSeo(locale) {
-  return request('/home-content', { locale })
+/** @param {string} [locale] @param {string} [publicPath] */
+export function getHomeSeo(locale, publicPath) {
+  return request('/home-content', { locale, publicPath })
 }
 
 /**

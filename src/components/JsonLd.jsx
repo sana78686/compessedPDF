@@ -22,6 +22,13 @@ export default function JsonLd({ data }) {
     if (!serialized) {
       return undefined
     }
+    // seo-prerender.php injects JSON-LD into the HTML shell so View Source matches crawlers; skip duplicate client injection.
+    if (typeof document !== 'undefined') {
+      const ssr = document.querySelector('script[type="application/ld+json"][data-cms-seo-prerender="1"]')
+      if (ssr) {
+        return undefined
+      }
+    }
     const el = document.createElement('script')
     el.type = 'application/ld+json'
     el.setAttribute('data-cms-json-ld', '1')

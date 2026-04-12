@@ -1,6 +1,6 @@
 /**
  * Fallback home rich text when CMS has no body for this locale.
- * English = long SEO block; other locales = shorter intro (add full copy in CMS per language).
+ * English = long SEO block; Indonesian = shorter intro (add full copy in CMS per language).
  */
 function siteName() {
   return String(import.meta.env.VITE_PUBLIC_SITE_NAME || 'Compress PDF').trim() || 'Compress PDF'
@@ -13,41 +13,6 @@ const SHORT_BY_LANG = {
   <h2>Apa itu “kompres PDF”?</h2>
   <p>Artinya mengurangi ukuran file sambil dokumen tetap nyaman dibaca atau dicetak. Cocok untuk faktur, tugas, dan hasil pindaian.</p>
   <p class="default-landing-note">Ganti teks ini dengan konten lengkap di CMS untuk bahasa Indonesia jika perlu.</p>
-</section>`.trim(),
-  ms: (name) => `
-<section class="default-landing-seo">
-  <p class="default-landing-lead"><strong>${name}</strong> membantu anda memampatkan fail PDF dalam pelayar. Tiada pemasangan diperlukan. Pilih fail, tunggu sebentar, dan muat turun PDF yang lebih kecil untuk dihantar melalui e-mel atau dimuat naik ke borang.</p>
-  <h2>Apa itu “mampatkan PDF”?</h2>
-  <p>Ia bermaksud mengurangkan saiz fail PDF dengan mengekalkan dokumen masih boleh dibaca. Sesuai untuk invois, kerja rumah, dan imbasan.</p>
-  <p class="default-landing-note">Tambah teks penuh untuk bahasa ini dalam Pengurus Kandungan (CMS) jika anda mahu ganti bahagian ini.</p>
-</section>`.trim(),
-  es: (name) => `
-<section class="default-landing-seo">
-  <p class="default-landing-lead"><strong>${name}</strong> te ayuda a reducir el tamaño de tus PDF en el navegador. No hace falta instalar nada: elige el archivo, espera un momento y descarga un PDF más ligero para enviar por correo o subir a un formulario.</p>
-  <h2>¿Qué es “comprimir PDF”?</h2>
-  <p>Significa bajar el peso del archivo manteniendo el documento útil para leer o imprimir. Ideal para facturas, trabajos y escaneos.</p>
-  <p class="default-landing-note">Puedes sustituir este texto con contenido completo en el CMS para este idioma.</p>
-</section>`.trim(),
-  fr: (name) => `
-<section class="default-landing-seo">
-  <p class="default-landing-lead"><strong>${name}</strong> vous aide à réduire la taille de vos PDF dans le navigateur. Aucune installation : choisissez le fichier, patientez, puis téléchargez un PDF plus léger à envoyer par e-mail ou à joindre en ligne.</p>
-  <h2>Que signifie « compresser un PDF » ?</h2>
-  <p>C’est diminuer la taille du fichier tout en gardant un document lisible. Utile pour factures, devoirs et scans.</p>
-  <p class="default-landing-note">Remplacez ce bloc par un texte complet dans le CMS pour cette langue.</p>
-</section>`.trim(),
-  ar: (name) => `
-<section class="default-landing-seo" dir="rtl">
-  <p class="default-landing-lead"><strong>${name}</strong> يساعدك على تقليل حجم ملفات PDF في المتصفح دون تثبيت برامج. اختر الملف، انتظر قليلًا، ثم نزّل نسخة أصغر لإرسالها بالبريد أو رفعها في نموذج.</p>
-  <h2>ماذا يعني «ضغط PDF»؟</h2>
-  <p>يعني تقليل حجم الملف مع بقاء المستند قابلاً للقراءة. مفيد للفواتير والواجبات والمستندات الممسوحة.</p>
-  <p class="default-landing-note">يمكنك استبدال هذا النص بنسخة كاملة من لوحة إدارة المحتوى لهذه اللغة.</p>
-</section>`.trim(),
-  ru: (name) => `
-<section class="default-landing-seo">
-  <p class="default-landing-lead"><strong>${name}</strong> помогает уменьшить размер PDF прямо в браузере. Установка не нужна: выберите файл, подождите и скачайте более лёгкий PDF для почты или загрузки в форму.</p>
-  <h2>Что значит «сжать PDF»?</h2>
-  <p>Это уменьшить размер файла, сохранив документ читаемым. Подходит для счетов, работ и сканов.</p>
-  <p class="default-landing-note">Полный текст для этого языка можно задать в CMS.</p>
 </section>`.trim(),
 }
 

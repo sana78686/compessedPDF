@@ -1,12 +1,12 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useParams, useLocation, Outlet } from 'react-router-dom'
 import SiteLayout from './components/SiteLayout'
-import HomePage from './pages/HomePage'
 import DynamicSeoHead from './components/DynamicSeoHead'
 import HreflangLinks from './components/HreflangLinks'
 import { supportedLangs, defaultLang, getPreferredLang } from './i18n/translations'
 import GeoLangRedirect from './components/GeoLangRedirect'
 
+const HomePage = lazy(() => import('./pages/HomePage'))
 const AllToolsPage = lazy(() => import('./pages/AllToolsPage'))
 const ComingSoonPage = lazy(() => import('./pages/ComingSoonPage'))
 const CmsPage = lazy(() => import('./pages/CmsPage'))
